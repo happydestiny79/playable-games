@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Launcher</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    .game-card { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+    .game-card:hover { transform: translateY(-4px); }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+
+  <!-- Password Screen -->
+  <div id="password-screen" class="min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-sm px-6">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-semibold tracking-tight">Game Launcher</h1>
+        <p class="text-zinc-500 mt-2 text-sm">Enter password to continue</p>
+      </div>
+      
+      <div class="space-y-3">
+        <input id="password-input" 
+               type="password" 
+               class="w-full bg-zinc-900 border border-zinc-800 focus:border-zinc-600 rounded-2xl px-5 py-3.5 text-lg outline-none transition-colors"
+               placeholder="Password"
+               onkeyup="if (event.key === 'Enter') checkPassword()">
+        
+        <button onclick="checkPassword()"
+                class="w-full bg-white text-zinc-950 font-medium py-3.5 rounded-2xl hover:bg-zinc-200 active:scale-[0.985] transition-all">
+          Enter
+        </button>
+      </div>
+      
+      <p id="error-msg" class="text-red-400 text-xs text-center mt-3 hidden">Incorrect password</p>
+    </div>
+  </div>
+
+  <!-- Game Launcher Content (hidden until password) -->
+  <div id="game-content" class="hidden max-w-5xl mx-auto px-6 py-12">
+    <div class="flex items-center justify-between mb-10">
+      <div>
+        <h1 class="text-4xl font-semibold tracking-tight">Game Launcher</h1>
+        <p class="text-zinc-400 mt-1 text-sm">happydestiny79 • All playable web games</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- Raise Your AI -->
+      <div class="game-card bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col">
+        <div class="flex-1">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-9 h-9 bg-violet-500/10 rounded-xl flex items-center justify-center">
+              <span class="text-violet-400 text-xl">🤖</span>
+            </div>
+            <div>
+              <h2 class="font-semibold text-lg">Raise Your AI</h2>
+              <p class="text-xs text-zinc-500">ai-education-game</p>
+            </div>
+          </div>
+          <p class="text-sm text-zinc-400 leading-relaxed">
+            Raise one AI companion across a 6-day story. Shape Helpfulness, Accuracy, Bias &amp; Confidence. Multiple endings + Extended Mode.
+          </p>
+        </div>
+        <div class="mt-6 pt-6 border-t border-zinc-800">
+          <a href="https://happydestiny79.github.io/ai-education-game" target="_blank"
+             class="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-xl bg-white text-zinc-950 font-medium text-sm hover:bg-zinc-200 active:scale-[0.985] transition-all">
+            Launch Game →
+          </a>
+        </div>
+      </div>
+
+      <!-- Leisure Lake Co-Op -->
+      <div class="game-card bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col">
+        <div class="flex-1">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-9 h-9 bg-sky-500/10 rounded-xl flex items-center justify-center">
+              <span class="text-sky-400 text-xl">🏞️</span>
+            </div>
+            <div>
+              <h2 class="font-semibold text-lg">Leisure Lake Co-Op</h2>
+              <p class="text-xs text-zinc-500">leisurelake</p>
+            </div>
+          </div>
+          <p class="text-sm text-zinc-400 leading-relaxed">
+            Co-op prototype set at Leisure Lake. Simple, relaxing multiplayer-style experience.
+          </p>
+        </div>
+        <div class="mt-6 pt-6 border-t border-zinc-800">
+          <a href="https://happydestiny79.github.io/leisurelake" target="_blank"
+             class="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-xl bg-white text-zinc-950 font-medium text-sm hover:bg-zinc-200 active:scale-[0.985] transition-all">
+            Launch Game →
+          </a>
+        </div>
+      </div>
+
+      <!-- Szewc Video Games -->
+      <div class="game-card bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col">
+        <div class="flex-1">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-9 h-9 bg-amber-500/10 rounded-xl flex items-center justify-center">
+              <span class="text-amber-400 text-xl">🎮</span>
+            </div>
+            <div>
+              <h2 class="font-semibold text-lg">Szewc Video Games</h2>
+              <p class="text-xs text-zinc-500">szewcgames</p>
+            </div>
+          </div>
+          <p class="text-sm text-zinc-400 leading-relaxed">
+            Collection of web games including scavenger hunt, math dash 3D, and many character-specific experiences.
+          </p>
+        </div>
+        <div class="mt-6 pt-6 border-t border-zinc-800">
+          <a href="https://happydestiny79.github.io/szewcgames" target="_blank"
+             class="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-xl bg-white text-zinc-950 font-medium text-sm hover:bg-zinc-200 active:scale-[0.985] transition-all">
+            Open Collection →
+          </a>
+        </div>
+      </div>
+
+      <!-- Unicorn Valley -->
+      <div class="game-card bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col">
+        <div class="flex-1">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-9 h-9 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+              <span class="text-emerald-400 text-xl">🌿</span>
+            </div>
+            <div>
+              <h2 class="font-semibold text-lg">Unicorn Valley</h2>
+              <p class="text-xs text-zinc-500">Dazed &amp; Confused • Three.js Tribute</p>
+            </div>
+          </div>
+          <p class="text-sm text-zinc-400 leading-relaxed">
+            Atmospheric choice-driven narrative prototype with polished Three.js scenes. Complete vertical slice.
+          </p>
+        </div>
+        <div class="mt-6 pt-6 border-t border-zinc-800">
+          <a href="https://happydestiny.github.io/unicorn-valley" target="_blank"
+             class="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-xl bg-white text-zinc-950 font-medium text-sm hover:bg-zinc-200 active:scale-[0.985] transition-all">
+            Play Web Version →
+          </a>
+          <p class="text-[10px] text-center text-zinc-500 mt-2">Local: npm run dev required</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const PASSWORD = "Elston1215";
+
+    function checkPassword() {
+      const input = document.getElementById("password-input");
+      const errorMsg = document.getElementById("error-msg");
+      const passwordScreen = document.getElementById("password-screen");
+      const gameContent = document.getElementById("game-content");
+
+      if (input.value === PASSWORD) {
+        passwordScreen.classList.add("hidden");
+        gameContent.classList.remove("hidden");
+        errorMsg.classList.add("hidden");
+      } else {
+        errorMsg.classList.remove("hidden");
+        input.value = "";
+      }
+    }
+
+    // Focus password field on load
+    window.onload = function() {
+      document.getElementById("password-input").focus();
+    }
+  </script>
+</body>
+</html>
