@@ -1,9 +1,9 @@
-name: Update Game Launcher
+name: Auto-Update Game Launcher
 
 on:
-  workflow_dispatch:   # Manual trigger
+  workflow_dispatch:
   schedule:
-    - cron: '0 9 * * *'   # Daily at 9am UTC (adjust as needed)
+    - cron: '0 9 * * *'
 
 jobs:
   update:
@@ -15,15 +15,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update launcher (placeholder)
-        run: |
-          echo "This workflow will be expanded to auto-generate cards from GitHub repos."
-          echo "For now it runs successfully on dispatch or schedule."
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: Commit if changed
+      - name: Install Octokit
+        run: npm install @octokit/rest
+
+      - name: Run generator
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .github/workflows/update-launcher.js
+
+      - name: Merge new cards
+        if: hashFiles('new-cards.html') != ''
+        run: |
+          sed -i '/<!-- ai-education-game -->/e cat new-cards.html' index.html
+          rm new-cards.html
+
+      - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet || git commit -m "Auto-update launcher cards"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Auto-add new game repos to launcher"
           git push
