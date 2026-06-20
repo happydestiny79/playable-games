@@ -8,7 +8,19 @@
     body { margin: 0; overflow: hidden; background: #111; }
     canvas { display: block; }
   </style>
-  <script type="module" crossorigin src="/assets/index-7kaUQKgK.js"></script>
+
+  <!-- Spark 3D Gaussian Splatting importmap -->
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+      "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/2.1.0/spark.module.js"
+    }
+  }
+  </script>
+  <script type="module" crossorigin src="/assets/index-Dvq2arCs.js"></script>
 </head>
 <body>
 </body>
