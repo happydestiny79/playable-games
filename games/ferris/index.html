@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FERRIS BUELLER'S DAY OFF • 1986 Web Prototype v0.8 (Modern Retro Graphics + Walk + TileMap + Particles + Polish)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap');
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        
+        .retro {
+            font-family: 'Press Start 2P', system-ui;
+            image-rendering: pixelated;
+        }
+        
+        .game-canvas {
+            border: 6px solid #222;
+            background: #5c8a5c;
+            image-rendering: pixelated;
+            box-shadow: 8px 8px 0 #222;
+        }
+        
+        .pixel-border {
+            border: 4px solid #222;
+            box-shadow: 6px 6px 0 #222;
+        }
+        
+        .retro-btn {
+            font-family: 'Press Start 2P', system-ui;
+            image-rendering: pixelated;
+            transition: all 0.1s;
+        }
+        
+        .retro-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #222;
+        }
+        
+        .retro-btn.active {
+            background-color: #facc15;
+            color: #222;
+            border-color: #713f12;
+        }
+        
+        .stat-bar {
+            height: 12px;
+            background: #222;
+            border: 2px solid #222;
+        }
+        
+        .stat-fill {
+            height: 100%;
+            transition: width 0.2s linear;
+        }
+        
+        .one-liner {
+            font-style: italic;
+            text-shadow: 2px 2px 0 #222;
+        }
+        
+        .journal-panel {
+            font-family: 'Press Start 2P', system-ui;
+            image-rendering: pixelated;
+        }
+        
+        .moment {
+            animation: momentPop 0.4s ease;
+        }
+        
+        @keyframes momentPop {
+            0% { transform: scale(0.2); opacity: 0; }
+            60% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        .narration {
+            animation: narrationFade 4.5s ease forwards;
+            text-shadow: 3px 3px 0 #1e3a8a;
+        }
+        
+        .floating-text {
+            position: absolute;
+            font-family: 'Press Start 2P', system-ui;
+            pointer-events: none;
+            z-index: 50;
+            text-shadow: 2px 2px 0 #000;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body class="bg-[#f5e8c7] text-[#3f2a1d]">
+    <div class="max-w-[1100px] mx-auto p-4">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-3 bg-[#3f2a1d] text-[#f5e8c7] p-3 rounded pixel-border">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tighter retro">FERRIS BUELLER'S DAY OFF</h1>
+                <p class="text-sm opacity-80">1986 • "Life moves pretty fast..." • Web Prototype v0.8 (Modern Retro Graphics)</p>
+            </div>
+            <div class="text-right text-xs">
+                <div class="font-bold">CHICAGO • 1986</div>
+                <div>Walk Polish • TileMap • Particles • Journal • Narration</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            
+            <!-- Game Canvas -->
+            <div class="lg:col-span-8 bg-white pixel-border p-3">
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <div>
+                        <span class="font-bold text-sm">CURRENT LOCATION</span>
+                        <span id="location-name" class="ml-2 px-2 py-0.5 bg-[#facc15] text-[#3f2a1d] text-xs font-bold rounded">HOME • SICK DAY</span>
+                    </div>
+                    <div class="flex gap-3 text-xs">
+                        <div>Score: <span id="score" class="font-bold text-[#166534]">0</span></div>
+                        <div>Moments: <span id="moments" class="font-bold">0/8</span></div>
+                    </div>
+                </div>
+                
+                <div class="relative">
+                    <canvas id="game-canvas" width="800" height="600" class="game-canvas" style="width: 720px; height: 540px; display: block; margin: 0 auto; border-radius: 4px;"></canvas>
+                    
+                    <!-- Floating text container -->
+                    <div id="floating-texts" class="absolute inset-0 pointer-events-none"></div>
+                </div>
+                
+                <div class="mt-2 text-[10px] flex justify-between text-[#854d0e] px-1">
+                    <div><span class="font-bold">ARROWS / WASD</span> Move • <span class="font-bold">1-5</span> Change Plan • <span class="font-bold">J</span> Journal</div>
+                    <div>Click near collectibles • Avoid high heat!</div>
+                </div>
+            </div>
+            
+            <!-- Right Sidebar: Stats + Plans + Companions -->
+            <div class="lg:col-span-4 bg-white pixel-border p-3 flex flex-col gap-3">
+                
+                <!-- Heat -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-bold">HEAT (Risk)</span>
+                        <span id="heat-value" class="font-mono">28</span>
+                    </div>
+                    <div class="stat-bar w-full">
+                        <div id="heat-bar" class="stat-fill bg-[#dc2626]" style="width: 28%"></div>
+                    </div>
+                </div>
+                
+                <!-- Stress (Cameron) -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-bold">CAMERON STRESS</span>
+                        <span id="stress-value" class="font-mono">12</span>
+                    </div>
+                    <div class="stat-bar w-full">
+                        <div id="stress-bar" class="stat-fill bg-[#854d0e]" style="width: 12%"></div>
+                    </div>
+                </div>
+                
+                <!-- Current Plan -->
+                <div>
+                    <div class="text-xs font-bold mb-1">CURRENT PLAN / DISGUISE</div>
+                    <div id="current-plan" class="px-2 py-1 bg-[#facc15] text-[#3f2a1d] font-bold text-sm text-center rounded">SCHOOL KID (SICK)</div>
+                </div>
+                
+                <!-- Plan Buttons -->
+                <div>
+                    <div class="text-xs font-bold mb-1">SWITCH PLAN</div>
+                    <div class="grid grid-cols-2 gap-1.5" id="plan-buttons">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Companions -->
+                <div>
+                    <div class="text-xs font-bold mb-1">COMPANIONS</div>
+                    <div class="text-xs bg-[#f5e8c7] p-2 rounded border border-[#3f2a1d]">
+                        <div>🚶 Cameron: <span id="cameron-status" class="font-bold">Following</span></div>
+                        <div>🚶 Sloane: <span id="sloane-status" class="font-bold">Waiting at school</span></div>
+                    </div>
+                </div>
+                
+                <div class="flex-1"></div>
+                
+                <!-- Quick Actions -->
+                <div class="flex gap-2">
+                    <button onclick="toggleJournal()" 
+                            class="retro-btn flex-1 bg-[#3f2a1d] hover:bg-[#1f2937] text-[#f5e8c7] text-xs py-1.5 font-bold border-2 border-[#222]">
+                        J - JOURNAL
+                    </button>
+                    <button onclick="triggerNarration()" 
+                            class="retro-btn flex-1 bg-[#1e40af] hover:bg-[#1e3a8a] text-white text-xs py-1.5 font-bold border-2 border-[#1e3a8a]">
+                        NARRATE
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom Info -->
+        <div class="mt-3 text-[10px] text-center text-[#854d0e] opacity-75">
+            v0.7 — Improved walk cycles • TileMap zones • Enhanced particles • Slapstick (Dog / Garage / Chasers) • Rich Journal • 4th-Wall Narration
+        </div>
+    </div>
+
+    <!-- Journal Overlay -->
+    <div id="journal-overlay" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[100]" onclick="if (event.target.id === 'journal-overlay') toggleJournal()">
+        <div onclick="event.stopImmediatePropagation()" class="journal-panel bg-[#3f2a1d] text-[#f5e8c7] w-full max-w-md mx-4 rounded pixel-border p-4 max-h-[70vh] flex flex-col">
+            <div class="flex justify-between items-center mb-3">
+                <div class="font-bold text-lg">FERRIS'S JOURNAL</div>
+                <button onclick="toggleJournal()" class="retro-btn px-3 py-0.5 bg-[#854d0e] text-xs">CLOSE (J)</button>
+            </div>
+            
+            <!-- Live Stats -->
+            <div class="grid grid-cols-3 gap-2 mb-3 text-center text-xs">
+                <div class="bg-[#222] p-1.5 rounded">
+                    <div class="opacity-70">SCORE</div>
+                    <div id="journal-score" class="font-bold text-[#facc15] text-base">0</div>
+                </div>
+                <div class="bg-[#222] p-1.5 rounded">
+                    <div class="opacity-70">HEAT</div>
+                    <div id="journal-heat" class="font-bold text-[#f87171] text-base">28</div>
+                </div>
+                <div class="bg-[#222] p-1.5 rounded">
+                    <div class="opacity-70">CAMERON STRESS</div>
+                    <div id="journal-stress" class="font-bold text-[#fcd34d] text-base">12</div>
+                </div>
+            </div>
+            
+            <div class="text-xs font-bold mb-1 opacity-80">EVENT LOG (newest first)</div>
+            <div id="journal-entries" class="flex-1 overflow-y-auto bg-[#1f2937] p-2 rounded text-xs space-y-1 font-mono leading-tight border border-[#854d0e]" style="max-height: 280px;">
+                <!-- Populated dynamically -->
+            </div>
+            
+            <div class="mt-2 text-[10px] opacity-60 text-center">Life moves pretty fast. If you don't stop and look around once in a while, you could miss it.</div>
+        </div>
+    </div>
+
+    <script>
+        // ============ GAME STATE ============
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d', { alpha: true });
+        
+        let state = {
+            player: { x: 320, y: 280, vx: 0, vy: 0, size: 18 },
+            legPhase: 0,
+            currentPlan: 'school',
+            heat: 28,
+            score: 0,
+            momentsCollected: 0,
+            cameronStress: 12,
+            location: 'home',
+            
+            // Slapstick state
+            dogActive: false,
+            dogX: 0, dogY: 0,
+            chaserActive: false,
+            chaserX: 0, chaserY: 0,
+            crashActive: false,
+            crashTimer: 0,
+            
+            // Animation / polish
+            isMoving: false,
+            walkSpeed: 1.6,
+            
+            // Systems
+            particles: [],
+            floaters: [],           // {x,y,text,color,life}
+            moments: [],
+            companions: { cameron: {x: 280, y: 310}, sloane: {x: 420, y: 180} },
+            
+            // Journal + Narration
+            journal: [],
+            narrationTimer: 18,
+            lastNarration: 0,
+            
+            // Input
+            keys: {},
+            
+            // Time
+            time: 0,
+            lastTime: Date.now()
+        };
+        
+        const PLANS = {
+            'school': { name: 'SCHOOL KID (SICK)', color: '#facc15', desc: 'Low heat, blend in' },
+            'parade': { name: 'PARADE FLOATER', color: '#ec4899', desc: 'High visibility, fun' },
+            'downtown': { name: 'DOWNTOWN COOL', color: '#22c7b1', desc: 'Chill but risky' },
+            'sick': { name: 'BED SICK', color: '#a78bfa', desc: 'Very low profile' },
+            'hero': { name: 'SAVING THE DAY', color: '#f97316', desc: 'Maximum heat' }
+        };
+        
+        const WIDTH = 800;
+        const HEIGHT = 600;
+
+        const NARRATION_LINES = [
+            "Life moves pretty fast. If you don't stop and look around once in a while, you could miss it.",
+            "I am the sausage king of Chicago!",
+            "You're still here? It's over. Go home. Go!",
+            "Pardon my French, but Cameron is so tight that if you stuck a lump of coal up his ass, in two weeks you'd have a diamond.",
+            "I could be the walrus. I'd still have to bum rides off people.",
+            "You can never go too far.",
+            "The question isn't 'what are we gonna do', the question is 'what aren't we gonna do?'",
+            "Ferris Bueller, you're my hero."
+        ];
+        
+        const MOMENT_QUOTES = [
+            "Saved the day!",
+            "Classic Ferris!",
+            "Totally bogus!",
+            "Bueller... Bueller...",
+            "Radical!",
+            "What a day!"
+        ];
+        
+        // ============ AUDIO (Web Audio API) ============
+        let audioCtx;
+        function initAudio() {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch(e) {}
+        }
+        
+        function playTone(freq, duration, type = 'square', volume = 0.3) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+                
+                osc.type = type;
+                osc.frequency.value = freq;
+                filter.type = 'lowpass';
+                filter.frequency.value = 1200;
+                
+                gain.gain.value = volume;
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                setTimeout(() => {
+                    gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                    setTimeout(() => osc.stop(), 120);
+                }, duration * 1000);
+            } catch(e) {}
+        }
+        
+        function playSuccess() { playTone(880, 0.18, 'sawtooth', 0.4); setTimeout(() => playTone(1320, 0.25, 'sawtooth', 0.35), 120); }
+        function playPoof() { playTone(220, 0.1, 'square', 0.25); }
+        function playAlarm() { playTone(440, 0.08, 'sawtooth', 0.2); }
+        function playDogBark() { playTone(180, 0.2, 'square', 0.35); }
+        function playCrash() { playTone(80, 0.4, 'sawtooth', 0.6); setTimeout(() => playTone(60, 0.3, 'sawtooth', 0.5), 90); }
+        
+        // ============ PARTICLES + FLOATING TEXT ============
+        function spawnParticles(x, y, count, color, speed = 1.8, spread = 2.5) {
+            for (let i = 0; i < count; i++) {
+                state.particles.push({
+                    x: x + (Math.random() - 0.5) * 12,
+                    y: y + (Math.random() - 0.5) * 12,
+                    vx: (Math.random() - 0.5) * speed * spread,
+                    vy: (Math.random() - 0.5) * speed * spread - 0.8,
+                    life: 18 + Math.random() * 22,
+                    color: color,
+                    size: 2 + Math.random() * 2.5
+                });
+            }
+        }
+        
+        function spawnFloater(x, y, text, color = '#facc15', duration = 55) {
+            state.floaters.push({
+                x, y,
+                text,
+                color,
+                life: duration,
+                vy: -0.9
+            });
+            
+            // Also show on canvas overlay for visibility
+            const container = document.getElementById('floating-texts');
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.style.left = (x / WIDTH * 100) + '%';
+            el.style.top = (y / HEIGHT * 100) + '%';
+            el.style.color = color;
+            el.style.fontSize = '11px';
+            el.textContent = text;
+            container.appendChild(el);
+            
+            setTimeout(() => {
+                if (el.parentNode) el.parentNode.removeChild(el);
+            }, duration * 16);
+        }
+        
+        function updateParticles() {
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                const p = state.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.12; // gravity
+                p.life--;
+                p.vx *= 0.96;
+                if (p.life <= 0) state.particles.splice(i, 1);
+            }
+        }
+        
+        function updateFloaters() {
+            for (let i = state.floaters.length - 1; i >= 0; i--) {
+                const f = state.floaters[i];
+                f.y += f.vy;
+                f.vy *= 0.96;
+                f.life--;
+                if (f.life <= 0) state.floaters.splice(i, 1);
+            }
+        }
+        
+        // ============ JOURNAL ============
+        function addToJournal(text, type = 'moment') {
+            const entry = {
+                text,
+                type, // 'moment', 'slapstick', 'narration'
+                time: Date.now()
+            };
+            state.journal.unshift(entry);
+            if (state.journal.length > 18) state.journal.pop();
+            
+            // Update live journal if open
+            if (!document.getElementById('journal-overlay').classList.contains('hidden')) {
+                renderJournal();
+            }
+            
+            // Small visual feedback
+            if (type === 'slapstick') {
+                spawnParticles(state.player.x, state.player.y - 10, 8, '#dc2626', 2.2);
+            }
+        }
+        
+        function renderJournal() {
+            const container = document.getElementById('journal-entries');
+            container.innerHTML = '';
+            
+            if (state.journal.length === 0) {
+                container.innerHTML = '<div class="opacity-60 italic p-1">No entries yet. Go cause some chaos!</div>';
+                return;
+            }
+            
+            state.journal.forEach(entry => {
+                const div = document.createElement('div');
+                let color = '#facc15';
+                if (entry.type === 'slapstick') color = '#f87171';
+                if (entry.type === 'narration') color = '#60a5fa';
+                
+                div.innerHTML = `<span style="color:${color}">[${entry.type.toUpperCase()}]</span> ${entry.text}`;
+                container.appendChild(div);
+            });
+            
+            // Update live stats in journal
+            document.getElementById('journal-score').textContent = state.score;
+            document.getElementById('journal-heat').textContent = Math.floor(state.heat);
+            document.getElementById('journal-stress').textContent = Math.floor(state.cameronStress);
+        }
+        
+        function toggleJournal() {
+            const overlay = document.getElementById('journal-overlay');
+            const isHidden = overlay.classList.contains('hidden');
+            
+            if (isHidden) {
+                overlay.classList.remove('hidden');
+                renderJournal();
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+        
+        // ============ NARRATION (4th Wall) ============
+        function triggerNarration(special = false) {
+            const line = NARRATION_LINES[Math.floor(Math.random() * NARRATION_LINES.length)];
+            
+            // Big floating narration
+            spawnFloater(state.player.x, state.player.y - 35, line, '#60a5fa', 85);
+            spawnParticles(state.player.x, state.player.y - 40, 14, '#60a5fa', 1.4, 1.8);
+            
+            addToJournal(line, 'narration');
+            
+            // Fun screen flash
+            const flash = document.createElement('div');
+            flash.style.cssText = 'position:fixed;inset:0;background:#60a5fa;opacity:0.12;pointer-events:none;z-index:40';
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 180);
+            
+            playTone(660, 0.3, 'sine', 0.25);
+            
+            state.narrationTimer = special ? 9 : 22 + Math.random() * 8;
+        }
+        
+        // ============ PLAN SYSTEM ============
+        function changePlan(planKey) {
+            if (!PLANS[planKey]) return;
+            
+            const oldPlan = state.currentPlan;
+            state.currentPlan = planKey;
+            
+            // Heat adjustment based on plan
+            const heatMod = {
+                'school': -3, 'sick': -6, 'downtown': 2, 'parade': 4, 'hero': 7
+            };
+            
+            state.heat = Math.max(5, Math.min(95, state.heat + (heatMod[planKey] || 0)));
+            
+            // Visual + audio
+            spawnParticles(state.player.x, state.player.y, 12, PLANS[planKey].color, 2.2);
+            spawnFloater(state.player.x, state.player.y - 28, PLANS[planKey].name, PLANS[planKey].color, 40);
+            
+            playPoof();
+            
+            // Update UI
+            updateUI();
+            
+            // Journal entry for major plan changes
+            if (oldPlan !== planKey) {
+                addToJournal(`Switched to ${PLANS[planKey].name}`, 'moment');
+            }
+            
+            // Chance for narration on big changes
+            if (Math.random() < 0.35) {
+                setTimeout(() => triggerNarration(true), 650);
+            }
+        }
+        
+        function createPlanButtons() {
+            const container = document.getElementById('plan-buttons');
+            container.innerHTML = '';
+            
+            Object.keys(PLANS).forEach(key => {
+                const p = PLANS[key];
+                const btn = document.createElement('button');
+                btn.className = `retro-btn text-[10px] px-2 py-1 border-2 border-[#222] bg-white font-bold rounded ${state.currentPlan === key ? 'active' : ''}`;
+                btn.textContent = p.name.split(' ')[0];
+                btn.title = p.desc;
+                btn.onclick = () => changePlan(key);
+                container.appendChild(btn);
+            });
+        }
+        
+                // ============ TILEMAP STYLE BACKGROUND (Modern Retro v0.8 - richer details) ============
+        function drawTileBackground() {
+            // Sky gradient for more modern feel
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, HEIGHT * 0.45);
+            skyGrad.addColorStop(0, "#7dd3fc");
+            skyGrad.addColorStop(1, "#bae6fd");
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, WIDTH, HEIGHT * 0.45);
+
+            // Distant horizon haze
+            ctx.fillStyle = "rgba(163, 163, 172, 0.3)";
+            ctx.fillRect(0, HEIGHT * 0.38, WIDTH, 40);
+
+            // Base ground / grass
+            ctx.fillStyle = "#4ade80";
+            ctx.fillRect(0, HEIGHT * 0.42, WIDTH, HEIGHT * 0.58);
+
+            // Main road / pavement (modern with better markings)
+            ctx.fillStyle = "#64748b";
+            ctx.fillRect(0, 260, WIDTH, 120);
+            ctx.strokeStyle = "#94a3b8";
+            ctx.lineWidth = 2;
+            for (let x = 20; x < WIDTH; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 320);
+                ctx.lineTo(x + 20, 320);
+                ctx.stroke();
+            }
+
+            // Cross street
+            ctx.fillRect(340, 0, 110, HEIGHT);
+
+            // Sidewalk / curb lines (cleaner modern pixel look)
+            ctx.strokeStyle = "#475569";
+            ctx.lineWidth = 2;
+            for (let x = 20; x < WIDTH; x += 36) {
+                ctx.beginPath();
+                ctx.moveTo(x, 260);
+                ctx.lineTo(x, 380);
+                ctx.stroke();
+            }
+            for (let y = 260; y < 380; y += 28) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(WIDTH, y);
+                ctx.stroke();
+            }
+
+            // Yellow road lines
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 4;
+            ctx.setLineDash([24, 22]);
+            ctx.beginPath();
+            ctx.moveTo(0, 320);
+            ctx.lineTo(WIDTH, 320);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // HOME ZONE (left) - more detailed house
+            ctx.fillStyle = "#22c55e";
+            ctx.fillRect(30, 390, 220, 190);
+
+            // House body
+            ctx.fillStyle = "#854d0e";
+            ctx.fillRect(55, 410, 140, 110);
+            // Roof
+            ctx.fillStyle = "#451a03";
+            ctx.beginPath();
+            ctx.moveTo(45, 410);
+            ctx.lineTo(125, 360);
+            ctx.lineTo(205, 410);
+            ctx.closePath();
+            ctx.fill();
+
+            // Door
+            ctx.fillStyle = "#1f2937";
+            ctx.fillRect(105, 470, 30, 50);
+            ctx.fillStyle = "#facc15";
+            ctx.fillRect(125, 485, 5, 5); // doorknob
+
+            // Windows
+            ctx.fillStyle = "#bae6fd";
+            ctx.fillRect(70, 430, 25, 25);
+            ctx.fillRect(155, 430, 25, 25);
+            ctx.strokeStyle = "#451a03";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(70, 430, 25, 25);
+            ctx.strokeRect(155, 430, 25, 25);
+
+            // Chimney
+            ctx.fillStyle = "#374151";
+            ctx.fillRect(170, 365, 18, 30);
+
+            // SCHOOL (top right) - more detailed
+            ctx.fillStyle = "#1e40af";
+            ctx.fillRect(500, 50, 240, 160);
+            // Roof trim
+            ctx.fillStyle = "#1e3a8a";
+            ctx.fillRect(490, 45, 260, 12);
+
+            // Windows grid
+            ctx.fillStyle = "#facc15";
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 4; col++) {
+                    ctx.fillRect(515 + col * 55, 70 + row * 45, 35, 28);
+                    ctx.strokeStyle = "#1e3a8a";
+                    ctx.strokeRect(515 + col * 55, 70 + row * 45, 35, 28);
+                }
+            }
+
+            // DOWNTOWN buildings - layered for depth
+            ctx.fillStyle = "#334155";
+            ctx.fillRect(30, 40, 120, 190);
+            ctx.fillStyle = "#1e2937";
+            ctx.fillRect(160, 60, 90, 170);
+            // Windows
+            ctx.fillStyle = "#64748b";
+            for (let i = 0; i < 5; i++) {
+                ctx.fillRect(45 + (i%3)*30, 60 + Math.floor(i/3)*50, 18, 22);
+                ctx.fillRect(175, 80 + i*28, 18, 18);
+            }
+
+            // PARADE route details (right)
+            ctx.fillStyle = "#ec4899";
+            ctx.fillRect(660, 410, 110, 14);
+            ctx.fillRect(660, 460, 110, 14);
+            // Confetti hint lines
+            ctx.strokeStyle = "#f472b6";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(680, 400);
+            ctx.lineTo(720, 380);
+            ctx.stroke();
+
+            // Trees for life (modern detail)
+            function drawTree(x, y) {
+                ctx.fillStyle = "#166534";
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x - 18, y + 35);
+                ctx.lineTo(x + 18, y + 35);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = "#15803d";
+                ctx.beginPath();
+                ctx.moveTo(x, y - 15);
+                ctx.lineTo(x - 14, y + 20);
+                ctx.lineTo(x + 14, y + 20);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = "#854d0e";
+                ctx.fillRect(x - 3, y + 30, 6, 12);
+            }
+            drawTree(280, 420);
+            drawTree(580, 430);
+            drawTree(150, 380);
+
+            // Grass tufts for texture
+            ctx.fillStyle = "#166534";
+            for (let i = 0; i < 25; i++) {
+                const gx = 40 + (i % 8) * 45 + Math.random() * 10;
+                const gy = 400 + Math.floor(i / 8) * 35;
+                ctx.fillRect(gx, gy, 3, 8);
+                ctx.fillRect(gx + 5, gy + 2, 2, 6);
+            }
+        }
+
+        // ============ DRAW PLAYER (Modern Retro Polish - more detailed + outlines) ============
+        function drawPlayer() {
+            const p = state.player;
+            const plan = PLANS[state.currentPlan];
+            const bodyColor = plan.color;
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.scale(1.3, 1.3);  // Scale up for more modern visible size and detail
+
+            const moveAmount = Math.abs(p.vx) + Math.abs(p.vy);
+            const isMoving = moveAmount > 0.4;
+            state.isMoving = isMoving;
+
+            if (isMoving) {
+                state.legPhase += 0.28 * (state.walkSpeed / 1.6);
+            } else {
+                state.legPhase *= 0.7;
+            }
+
+            const legOffset = Math.sin(state.legPhase) * 6;
+            const armOffset = Math.sin(state.legPhase + 1.2) * 5;
+
+            // Shadow (softer modern)
+            ctx.fillStyle = "rgba(0,0,0,0.3)";
+            ctx.beginPath();
+            ctx.ellipse(0, 18, 14, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Legs with better form
+            ctx.fillStyle = "#1f2937";
+            ctx.fillRect(-7, 3, 5, 14 + legOffset * 0.35);
+            ctx.fillRect(2, 3, 5, 14 - legOffset * 0.35);
+            // Shoes with detail
+            ctx.fillStyle = "#111827";
+            ctx.fillRect(-9, 15 + legOffset * 0.35, 8, 4);
+            ctx.fillRect(1, 15 - legOffset * 0.35, 8, 4);
+
+            // Body with collar and buttons for modern detail
+            ctx.fillStyle = bodyColor;
+            ctx.fillRect(-10, -8, 20, 16);
+            // Collar
+            ctx.fillStyle = "#111827";
+            ctx.fillRect(-10, -8, 20, 4);
+            // Buttons
+            ctx.fillStyle = "#facc15";
+            ctx.fillRect(-2, -2, 3, 3);
+            ctx.fillRect(-2, 4, 3, 3);
+
+            // Arms with cuffs
+            ctx.fillStyle = "#1f2937";
+            ctx.fillRect(-12, -3 + armOffset * 0.5, 5, 11);
+            ctx.fillRect(7, -3 - armOffset * 0.5, 5, 11);
+            // Cuffs
+            ctx.fillStyle = bodyColor;
+            ctx.fillRect(-12, 5 + armOffset * 0.5, 5, 3);
+            ctx.fillRect(7, 5 - armOffset * 0.5, 5, 3);
+
+            // Head with better features
+            ctx.fillStyle = "#fed7aa";
+            ctx.beginPath();
+            ctx.arc(0, -12, 9, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hair (more styled)
+            ctx.fillStyle = "#451a03";
+            ctx.fillRect(-9, -20, 18, 8);
+            ctx.fillRect(-10, -16, 4, 5);
+            ctx.fillRect(6, -16, 4, 5);
+
+            // Eyes (modern cartoon)
+            ctx.fillStyle = "#1f2937";
+            ctx.fillRect(-5, -14, 3, 2);
+            ctx.fillRect(2, -14, 3, 2);
+
+            // Sunglasses or cool factor per plan
+            if (state.currentPlan !== "sick") {
+                ctx.fillStyle = "#111827";
+                ctx.fillRect(-6, -15, 4, 3);
+                ctx.fillRect(2, -15, 4, 3);
+                ctx.fillRect(-1, -14, 2, 1);
+            }
+
+            // Plan specific flair (more visible)
+            ctx.fillStyle = plan.color;
+            if (state.currentPlan === "parade") {
+                ctx.fillRect(-6, -23, 12, 4); // flashy headband
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(-3, -22, 2, 2);
+            } else if (state.currentPlan === "hero") {
+                ctx.fillRect(-7, -24, 14, 3); // hero headband
+            } else {
+                ctx.fillRect(-6, -22, 12, 3); // default cap brim
+            }
+
+            // Subtle outline for modern crispness
+            ctx.strokeStyle = "#111827";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(-10, -8, 20, 16); // body outline
+            ctx.beginPath();
+            ctx.arc(0, -12, 9, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Crash indicator
+            if (state.crashActive) {
+                ctx.save();
+                ctx.translate(p.x + 5, p.y - 26);
+                ctx.fillStyle = "#facc15";
+                ctx.font = "bold 14px sans-serif";
+                ctx.fillText("!", 0, 0);
+                ctx.restore();
+            }
+        }
+
+                function drawCompanions() {
+            // Cameron (nervous guy)
+            const c = state.companions.cameron;
+            ctx.fillStyle = '#854d0e';
+            ctx.fillRect(c.x - 6, c.y - 8, 12, 14);
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(c.x, c.y - 12, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#111';
+            ctx.fillRect(c.x - 3, c.y - 14, 2, 1);
+            ctx.fillRect(c.x + 1, c.y - 14, 2, 1);
+            
+            // Sloane
+            const s = state.companions.sloane;
+            ctx.fillStyle = '#ec4899';
+            ctx.fillRect(s.x - 5, s.y - 7, 10, 12);
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(s.x, s.y - 11, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawDog() {
+            if (!state.dogActive) return;
+            const dx = state.dogX;
+            const dy = state.dogY;
+            
+            ctx.fillStyle = '#451a03';
+            // Body
+            ctx.fillRect(dx - 9, dy - 3, 18, 8);
+            // Head
+            ctx.fillRect(dx + 6, dy - 8, 8, 8);
+            // Ears
+            ctx.fillRect(dx + 7, dy - 11, 3, 4);
+            ctx.fillRect(dx + 11, dy - 10, 3, 4);
+            // Teeth / angry
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(dx + 10, dy - 4, 2, 2);
+            ctx.fillRect(dx + 13, dy - 4, 2, 2);
+            
+            // Legs
+            ctx.fillStyle = '#222';
+            ctx.fillRect(dx - 6, dy + 3, 3, 6);
+            ctx.fillRect(dx + 2, dy + 3, 3, 6);
+        }
+        
+        function drawChaser() {
+            if (!state.chaserActive) return;
+            const cx = state.chaserX;
+            const cy = state.chaserY;
+            
+            // Rooney style (tall angry man)
+            ctx.fillStyle = '#1e2937';
+            ctx.fillRect(cx - 5, cy - 14, 10, 18);
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(cx, cy - 17, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(cx - 2, cy - 19, 4, 2); // angry brow
+        }
+        
+        function drawMoments() {
+            state.moments.forEach(m => {
+                if (m.collected) return;
+                
+                const pulse = Math.sin(Date.now() / 180) * 1.5 + 3;
+                
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, 6 + pulse * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#854d0e';
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Sparkle
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(m.x + 2, m.y - 3, 2, 2);
+            });
+        }
+        
+        function drawParticles() {
+            state.particles.forEach(p => {
+                const alpha = Math.max(0.1, p.life / 35);
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = p.color;
+                if (p.size > 3.5) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+                }
+            });
+            ctx.globalAlpha = 1;
+        }
+        
+        function drawFloaters() {
+            state.floaters.forEach(f => {
+                const alpha = Math.max(0.15, f.life / 70);
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = f.color;
+                ctx.font = '11px "Press Start 2P"';
+                ctx.fillText(f.text, f.x - ctx.measureText(f.text).width / 2, f.y);
+            });
+            ctx.globalAlpha = 1;
+        }
+        
+        // ============ GAME LOGIC ============
+        function updateLocation() {
+            const p = state.player;
+            let newLoc = 'home';
+            
+            if (p.y < 210) newLoc = 'school';
+            else if (p.x > 420 && p.y > 300) newLoc = 'parade';
+            else if (p.x > 320 && p.y < 210) newLoc = 'downtown';
+            
+            if (newLoc !== state.location) {
+                state.location = newLoc;
+                document.getElementById('location-name').textContent = 
+                    newLoc.toUpperCase() + ' • ' + (state.currentPlan === 'sick' ? 'SICK DAY' : 'OUT');
+                
+                if (Math.random() < 0.6) {
+                    spawnFloater(p.x, p.y - 20, newLoc.toUpperCase(), '#facc15', 38);
+                }
+            }
+        }
+        
+        function updateMovement() {
+            const p = state.player;
+            let speed = state.walkSpeed;
+            
+            // Plan speed modifiers
+            if (state.currentPlan === 'hero') speed *= 1.35;
+            if (state.currentPlan === 'sick') speed *= 0.7;
+            
+            let dx = 0, dy = 0;
+            if (state.keys['ArrowLeft'] || state.keys['a'] || state.keys['A']) dx -= 1;
+            if (state.keys['ArrowRight'] || state.keys['d'] || state.keys['D']) dx += 1;
+            if (state.keys['ArrowUp'] || state.keys['w'] || state.keys['W']) dy -= 1;
+            if (state.keys['ArrowDown'] || state.keys['s'] || state.keys['S']) dy += 1;
+            
+            if (dx !== 0 || dy !== 0) {
+                const len = Math.sqrt(dx*dx + dy*dy);
+                p.vx = (dx / len) * speed;
+                p.vy = (dy / len) * speed;
+            } else {
+                p.vx *= 0.72;
+                p.vy *= 0.72;
+            }
+            
+            p.x += p.vx;
+            p.y += p.vy;
+            
+            // World bounds
+            p.x = Math.max(22, Math.min(WIDTH - 22, p.x));
+            p.y = Math.max(18, Math.min(462, p.y));
+            
+            // Heat slowly rises when moving fast in risky plans
+            if (state.isMoving && (state.currentPlan === 'hero' || state.currentPlan === 'parade')) {
+                state.heat = Math.min(98, state.heat + 0.035);
+            } else if (state.isMoving) {
+                state.heat = Math.max(5, state.heat - 0.012);
+            } else {
+                state.heat = Math.max(5, state.heat - 0.04);
+            }
+            
+            // Camera companion follow (simple lerp)
+            state.companions.cameron.x += (p.x - 45 - state.companions.cameron.x) * 0.04;
+            state.companions.cameron.y += (p.y + 22 - state.companions.cameron.y) * 0.04;
+            
+            // Sloane stays more static but reacts
+            state.companions.sloane.x += (p.x * 0.02 + 380 - state.companions.sloane.x) * 0.015;
+        }
+        
+        function updateSlapstick() {
+            const p = state.player;
+            
+            // DOG CHASE (home + high heat)
+            if (state.location === 'home' && state.heat > 55 && !state.dogActive && Math.random() < 0.018) {
+                state.dogActive = true;
+                state.dogX = p.x + 120;
+                state.dogY = p.y + 30;
+                spawnFloater(p.x, p.y - 30, 'ROTTWEILER!!!', '#dc2626', 50);
+                addToJournal("The Rottweiler is loose!!", 'slapstick');
+                spawnParticles(state.dogX, state.dogY, 9, '#451a03');
+                playDogBark();
+            }
+            
+            if (state.dogActive) {
+                const dx = p.x - state.dogX;
+                const dy = p.y - state.dogY;
+                const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                
+                state.dogX += (dx / dist) * 2.8;
+                state.dogY += (dy / dist) * 2.8;
+                
+                if (dist < 18) {
+                    state.heat = Math.min(99, state.heat + 22);
+                    state.cameronStress += 9;
+                    spawnParticles(p.x, p.y, 16, '#dc2626', 3);
+                    spawnFloater(p.x, p.y - 18, 'OW! BITTEN!', '#f87171', 35);
+                    addToJournal("Bitten by the Rottweiler!", 'slapstick');
+                    playAlarm();
+                    
+                    // Escape the dog
+                    state.dogActive = false;
+                    state.dogX = -200;
+                }
+                
+                if (dist > 280 || state.heat < 30) {
+                    state.dogActive = false;
+                }
+            }
+            
+            // GARAGE CRASH (with Cameron + high stress/heat)
+            if (!state.crashActive && state.location === 'home' && state.heat > 62 && state.cameronStress > 45 && Math.random() < 0.012) {
+                state.crashActive = true;
+                state.crashTimer = 38;
+                spawnParticles(p.x + 30, p.y + 10, 22, '#f97316', 2.6);
+                spawnParticles(p.x - 20, p.y + 15, 18, '#6b7280', 1.9);
+                spawnFloater(p.x, p.y - 25, 'GARAGE CRASH!!!', '#f97316', 48);
+                addToJournal("Cameron crashed the Ferrari in the garage!", 'slapstick');
+                playCrash();
+                state.heat = Math.min(99, state.heat + 28);
+                state.cameronStress = Math.min(95, state.cameronStress + 18);
+                state.score = Math.max(0, state.score - 35);
+            }
+            
+            if (state.crashActive) {
+                state.crashTimer--;
+                if (state.crashTimer <= 0) state.crashActive = false;
+            }
+            
+            // CHASERS (Rooney/Jeanie style) when downtown + high heat
+            if (state.location === 'downtown' && state.heat > 68 && !state.chaserActive && Math.random() < 0.014) {
+                state.chaserActive = true;
+                state.chaserX = p.x + 95;
+                state.chaserY = p.y - 25;
+                spawnFloater(p.x + 40, p.y - 35, "ROONEY'S COMING!", '#dc2626', 42);
+                addToJournal("Mr. Rooney and Jeanie are chasing you!", 'slapstick');
+                playAlarm();
+            }
+            
+            if (state.chaserActive) {
+                const dx = p.x - state.chaserX;
+                const dy = p.y - state.chaserY;
+                const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                
+                state.chaserX += (dx / dist) * 1.9;
+                state.chaserY += (dy / dist) * 1.9;
+                
+                if (dist < 22) {
+                    state.heat = Math.min(99, state.heat + 18);
+                    spawnParticles(p.x, p.y, 10, '#dc2626');
+                    spawnFloater(p.x, p.y - 15, 'CAUGHT!', '#f87171', 30);
+                    addToJournal("Almost caught by Rooney!", 'slapstick');
+                    state.chaserActive = false;
+                    state.chaserX = 900;
+                }
+                
+                if (dist > 220) state.chaserActive = false;
+            }
+        }
+        
+        function updateMoments() {
+            const p = state.player;
+            
+            state.moments.forEach(m => {
+                if (m.collected) return;
+                
+                const dx = p.x - m.x;
+                const dy = p.y - m.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < 22) {
+                    m.collected = true;
+                    state.momentsCollected++;
+                    state.score += 85;
+                    state.heat = Math.max(5, state.heat - 11);
+                    
+                    const quote = MOMENT_QUOTES[Math.floor(Math.random() * MOMENT_QUOTES.length)];
+                    spawnFloater(m.x, m.y - 18, quote, '#facc15', 52);
+                    spawnParticles(m.x, m.y, 15, '#facc15', 2.4);
+                    
+                    addToJournal(`Collected moment: "${quote}"`, 'moment');
+                    playSuccess();
+                    
+                    // Chance to trigger narration
+                    if (Math.random() < 0.45) {
+                        setTimeout(() => triggerNarration(true), 380);
+                    }
+                    
+                    // Respawn moment later
+                    setTimeout(() => {
+                        if (m.collected) {
+                            m.collected = false;
+                            m.x = 60 + Math.random() * 520;
+                            m.y = 80 + Math.random() * 320;
+                        }
+                    }, 14000);
+                }
+            });
+            
+            // Spawn more moments if low
+            if (state.moments.length < 5 && Math.random() < 0.04) {
+                state.moments.push({
+                    x: 80 + Math.random() * (WIDTH - 160),
+                    y: 90 + Math.random() * (HEIGHT - 180),
+                    collected: false
+                });
+            }
+        }
+        
+        function updateNarration() {
+            state.narrationTimer -= 0.016;
+            if (state.narrationTimer <= 0) {
+                if (Math.random() < 0.85) {
+                    triggerNarration();
+                } else {
+                    state.narrationTimer = 14;
+                }
+            }
+        }
+        
+        function updateCompanions() {
+            // Simple stress reaction
+            if (state.heat > 70) {
+                state.cameronStress = Math.min(95, state.cameronStress + 0.09);
+            } else {
+                state.cameronStress = Math.max(5, state.cameronStress - 0.03);
+            }
+            
+            // Update UI statuses
+            const camStatus = document.getElementById('cameron-status');
+            camStatus.textContent = state.cameronStress > 55 ? 'PANICKING' : 'Following';
+            camStatus.style.color = state.cameronStress > 55 ? '#dc2626' : '#166534';
+        }
+        
+        // ============ MAIN LOOP ============
+        function gameLoop() {
+            const now = Date.now();
+            const delta = Math.min(60, now - state.lastTime) / 1000;
+            state.lastTime = now;
+            state.time += delta;
+            
+            // Update
+            updateMovement();
+            updateLocation();
+            updateSlapstick();
+            updateMoments();
+            updateCompanions();
+            updateParticles();
+            updateFloaters();
+            updateNarration();
+            
+            // Heat clamp
+            state.heat = Math.max(5, Math.min(99, state.heat));
+            
+            // Draw
+            ctx.imageSmoothingEnabled = false;
+            drawTileBackground();
+            
+            // Draw moments first (under player)
+            drawMoments();
+            
+            // Companions
+            drawCompanions();
+            
+            // Main player (polished walk)
+            drawPlayer();
+            
+            // Slapstick actors
+            drawDog();
+            drawChaser();
+            
+            // Effects
+            drawParticles();
+            drawFloaters();
+            
+            // Screen shake for crash
+            if (state.crashActive && state.crashTimer > 0) {
+                const shake = Math.sin(state.time * 40) * 3;
+                ctx.translate(shake, shake * 0.6);
+            }
+            
+            // UI updates
+            updateUI();
+            
+            // Occasional auto narration on big moments
+            if (state.momentsCollected > 0 && state.momentsCollected % 3 === 0 && Math.random() < 0.08) {
+                triggerNarration(true);
+            }
+            
+            // Win condition hint
+            if (state.momentsCollected >= 8 && state.score > 420) {
+                if (Math.random() < 0.04) {
+                    spawnFloater(320, 80, "YOU DID IT! LEGENDARY DAY!", '#facc15', 90);
+                }
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function updateUI() {
+            // Bars
+            document.getElementById('heat-bar').style.width = state.heat + '%';
+            document.getElementById('heat-value').textContent = Math.floor(state.heat);
+            
+            document.getElementById('stress-bar').style.width = state.cameronStress + '%';
+            document.getElementById('stress-value').textContent = Math.floor(state.cameronStress);
+            
+            // Score & moments
+            document.getElementById('score').textContent = state.score;
+            document.getElementById('moments').textContent = `${state.momentsCollected}/8`;
+            
+            // Current plan
+            const planEl = document.getElementById('current-plan');
+            const planData = PLANS[state.currentPlan];
+            planEl.textContent = planData.name;
+            planEl.style.backgroundColor = planData.color;
+            planEl.style.color = '#222';
+            
+            // Location color
+            const locEl = document.getElementById('location-name');
+            if (state.location === 'home') locEl.style.backgroundColor = '#4ade80';
+            else if (state.location === 'school') locEl.style.backgroundColor = '#1e40af';
+            else if (state.location === 'parade') locEl.style.backgroundColor = '#ec4899';
+            else locEl.style.backgroundColor = '#facc15';
+            
+            // Plan buttons active state
+            document.querySelectorAll('#plan-buttons button').forEach(btn => {
+                const key = Object.keys(PLANS).find(k => PLANS[k].name.startsWith(btn.textContent));
+                if (key) {
+                    btn.classList.toggle('active', state.currentPlan === key);
+                }
+            });
+        }
+        
+        // ============ INPUT ============
+        function setupInput() {
+            window.addEventListener('keydown', (e) => {
+                state.keys[e.key] = true;
+                
+                if (['1','2','3','4','5'].includes(e.key)) {
+                    const keys = Object.keys(PLANS);
+                    const idx = parseInt(e.key) - 1;
+                    if (keys[idx]) changePlan(keys[idx]);
+                }
+                
+                if (e.key.toLowerCase() === 'j') {
+                    e.preventDefault();
+                    toggleJournal();
+                }
+                
+                if (e.key.toLowerCase() === 'n') {
+                    triggerNarration();
+                }
+                
+                // Emergency low heat
+                if (e.key === 'h' || e.key === 'H') {
+                    state.heat = Math.max(8, state.heat - 18);
+                    spawnParticles(state.player.x, state.player.y, 6, '#22c7b1');
+                }
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                state.keys[e.key] = false;
+            });
+            
+            // Click to collect or move toward
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clickX = ((e.clientX - rect.left) / rect.width) * 640;
+                const clickY = ((e.clientY - rect.top) / rect.height) * 480;
+                
+                // Try to collect nearby moment
+                let collected = false;
+                state.moments.forEach(m => {
+                    if (!m.collected) {
+                        const d = Math.hypot(m.x - clickX, m.y - clickY);
+                        if (d < 38) {
+                            m.collected = true;
+                            state.momentsCollected++;
+                            state.score += 70;
+                            state.heat = Math.max(5, state.heat - 9);
+                            spawnFloater(m.x, m.y - 16, "NICE!", '#facc15', 40);
+                            spawnParticles(m.x, m.y, 12, '#facc15');
+                            addToJournal("Clicked a moment!", 'moment');
+                            playSuccess();
+                            collected = true;
+                        }
+                    }
+                });
+                
+                if (!collected) {
+                    // Walk toward click
+                    const dx = clickX - state.player.x;
+                    const dy = clickY - state.player.y;
+                    const len = Math.hypot(dx, dy) || 1;
+                    state.player.vx = (dx / len) * 3.2;
+                    state.player.vy = (dy / len) * 3.2;
+                }
+            });
+            
+            // Touch support (mobile)
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const tx = ((e.touches[0].clientX - rect.left) / rect.width) * 640;
+                const ty = ((e.touches[0].clientY - rect.top) / rect.height) * 480;
+                
+                const dx = tx - state.player.x;
+                const dy = ty - state.player.y;
+                const len = Math.hypot(dx, dy) || 1;
+                state.player.vx = (dx / len) * 3.8;
+                state.player.vy = (dy / len) * 3.8;
+            });
+        }
+        
+        function initMoments() {
+            state.moments = [];
+            for (let i = 0; i < 6; i++) {
+                state.moments.push({
+                    x: 70 + Math.random() * 500,
+                    y: 90 + Math.random() * 300,
+                    collected: false
+                });
+            }
+        }
+        
+        function initGame() {
+            initAudio();
+            
+            // Starting state
+            state.player.x = 350;
+            state.player.y = 420;
+            state.heat = 28;
+            state.score = 12;
+            state.cameronStress = 14;
+            state.momentsCollected = 0;
+            state.currentPlan = 'school';
+            
+            initMoments();
+            
+            // Seed some journal
+            state.journal = [
+                { text: "Day off begins. Cameron is already stressed.", type: 'moment', time: Date.now() - 80000 },
+                { text: "Switched to SCHOOL KID plan", type: 'moment', time: Date.now() - 30000 }
+            ];
+            
+            // Initial companions positions
+            state.companions.cameron = { x: 290, y: 445 };
+            state.companions.sloane = { x: 600, y: 195 };
+            
+            // Initial particles for flair
+            spawnParticles(320, 260, 7, '#facc15', 1.5);
+            
+            // Setup UI
+            createPlanButtons();
+            updateUI();
+            
+            // Keyboard hint
+            setTimeout(() => {
+                spawnFloater(320, 120, "Press 1-5 to change plans!", '#60a5fa', 55);
+            }, 2400);
+            
+            // Occasional auto narration start
+            setTimeout(() => {
+                if (state.narrationTimer > 8) triggerNarration();
+            }, 19000);
+            
+            setupInput();
+            
+            // Start loop
+            requestAnimationFrame(gameLoop);
+            
+            // Welcome
+            console.log('%c[Ferris 1986 v0.7] Web prototype ready. Walk, tilemap bg, particles, journal (J), narration, slapstick all active.', 'color:#854d0e');
+        }
+        
+        // Boot
+        window.onload = () => {
+            initGame();
+            
+            // Easter egg: press ? for narration
+            document.addEventListener('keypress', (e) => {
+                if (e.key === '?') triggerNarration(true);
+            });
+        };
+    </script>
+</body>
+</html>
