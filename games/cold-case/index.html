@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COLD CASE ARCHIVE • v0.3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Special+Elite&amp;family=Playfair+Display:wght@700&amp;display=swap');
+        
+        body {
+            background: #1a1614;
+            font-family: 'Special Elite', system-ui;
+        }
+        
+        .archive-bg {
+            background-image: 
+                linear-gradient(rgba(26, 22, 20, 0.94), rgba(26, 22, 20, 0.96)),
+                url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22 viewBox=%220 0 300 300%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.015%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22300%22 height=%22300%22 filter=%22url(%23noise)%22 opacity=%220.07%22/%3E%3C/svg%3E');
+        }
+        
+        .evidence-card {
+            background: linear-gradient(#f4e9d8, #e8d9c2);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.35), 
+                       0 4px 6px -4px rgb(0 0 0 / 0.3),
+                       inset 0 1px 0 rgba(255,255,255,0.65);
+            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid #c5b8a3;
+        }
+        
+        .evidence-card:hover { transform: translateY(-3px) rotate(0.8deg); }
+        .evidence-card.dragging { opacity: 0.5; transform: scale(0.92) rotate(4deg); }
+        
+        .match-zone {
+            background: #2c2522;
+            border: 2px dashed #6b5f4f;
+            transition: all 0.15s ease;
+        }
+        .match-zone.dragover {
+            background: #3a312b;
+            border-color: #c5b8a3;
+            box-shadow: 0 0 0 4px rgba(197, 184, 163, 0.15);
+        }
+        
+        .archive-header {
+            background: linear-gradient(#2c2522, #1f1b18);
+            border-bottom: 1px solid #4a4138;
+        }
+        
+        .evidence-photo {
+            background: linear-gradient(135deg, #d4c3a8, #b8a88f);
+            position: relative;
+        }
+        .evidence-photo::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.035) 2px, rgba(0,0,0,0.035) 4px);
+        }
+        
+        .status-bar { height: 6px; background: linear-gradient(to right, #8b7355, #c5b8a3); }
+        
+        .case-title { font-size: 1.45rem; line-height: 1.05; }
+        
+        .film-grain::before {
+            content: '';
+            position: absolute; inset: 0;
+            background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Cfilter id=%22grain%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22/%3E%3C/filter%3E%3Crect width=%22300%22 height=%22300%22 filter=%22url(%23grain)%22 opacity=%220.055%22/%3E%3C/svg%3E');
+            pointer-events: none; z-index: 1;
+        }
+        
+        .nav-tab {
+            transition: all 0.1s ease;
+        }
+        .nav-tab.active {
+            background: #2c2522;
+            border-color: #6b5f4f;
+            color: #c5b8a3;
+        }
+        
+        .case-card {
+            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .case-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3);
+        }
+        
+        .solved-badge {
+            background: linear-gradient(#166534, #14532d);
+            color: #86efac;
+        }
+    </style>
+</head>
+<body class="text-[#e8d9c2] archive-bg min-h-screen">
+    <!-- Header -->
+    <div class="archive-header sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-x-4">
+                <div class="w-9 h-9 bg-[#c5b8a3] flex items-center justify-center rounded">
+                    <i class="fa-solid fa-archive text-[#1a1614] text-3xl"></i>
+                </div>
+                <div>
+                    <div class="font-bold tracking-[3.5px] text-3xl">COLD CASE</div>
+                    <div class="text-[10px] text-[#8b7355] -mt-1 tracking-[2.5px]">EVIDENCE ARCHIVE • EST 1974</div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-x-8 text-sm">
+                <div class="flex items-center gap-x-3">
+                    <div>
+                        <div class="text-[#8b7355] text-xs tracking-widest">ARCHIVE INTEGRITY</div>
+                        <div class="flex items-center gap-x-2">
+                            <div class="w-32 h-2 bg-[#3a312b] rounded overflow-hidden">
+                                <div id="integrity-bar" class="status-bar transition-all" style="width: 42%"></div>
+                            </div>
+                            <span id="integrity-value" class="font-mono text-xs tabular-nums">42%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="h-5 w-px bg-[#4a4138]"></div>
+                
+                <div class="flex items-center gap-x-2">
+                    <i class="fa-solid fa-gem text-[#c5b8a3]"></i>
+                    <div>
+                        <span id="clarity-points" class="font-mono text-xl font-bold tabular-nums">184</span>
+                        <span class="text-xs text-[#8b7355] ml-0.5">CLARITY</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto px-8 pt-8 pb-16" id="main-content">
+        <!-- Content injected by JS (Dashboard or Case View) -->
+    </div>
+    
+    <div class="fixed bottom-4 right-4 text-[10px] text-[#4a4138]">v0.3 — CASE SELECT + 3 CASES • PERSISTENT</div>
+
+    <script>
+        // ==================== DATA ====================
+        const cases = [
+            {
+                id: 0,
+                caseNumber: "86-0472",
+                title: "THE DISAPPEARING DRUMMER",
+                year: "1986",
+                description: "Vincent \"Vinnie\" Morello vanished from the stage of the Blue Note Lounge during his final set. Only his drumsticks remained.",
+                clues: [
+                    { id: 1, title: "Gig Poster", type: "Photo", desc: "Blue Note Lounge — March 14, 1986. Vinnie's name is crossed out with red marker.", icon: "fa-image", correctMatch: 4 },
+                    { id: 2, title: "Drumsticks", type: "Physical", desc: "Pair of hickory sticks found on stage. One has a small blood smear near the grip.", icon: "fa-guitar", correctMatch: 5 },
+                    { id: 3, title: "Witness Statement", type: "Document", desc: "Bartender claims Vinnie left through the back door at 1:17am with a man in a tan coat.", icon: "fa-file-lines", correctMatch: 6 },
+                    { id: 4, title: "Red Marker", type: "Physical", desc: "Found in the alley behind the club. Matches the ink on the poster.", icon: "fa-pen-nib", correctMatch: 1 },
+                    { id: 5, title: "Blood Sample", type: "Forensic", desc: "Type AB+. Matches Vinnie's medical records from 1984.", icon: "fa-vial", correctMatch: 2 },
+                    { id: 6, title: "Tan Coat Fiber", type: "Forensic", desc: "Synthetic wool fiber recovered from the stage. Not from any band member.", icon: "fa-search", correctMatch: 3 }
+                ],
+                clarityReward: 155
+            },
+            {
+                id: 1,
+                caseNumber: "87-0193",
+                title: "THE LAST PAYPHONE CALL",
+                year: "1987",
+                description: "A frantic call was placed from a phone booth on 47th Street at 2:41am. The caller was never identified.",
+                clues: [
+                    { id: 10, title: "Phone Booth Photo", type: "Photo", desc: "Rain-streaked glass. A hand is visible pressing against the pane.", icon: "fa-image", correctMatch: 13 },
+                    { id: 11, title: "Call Log", type: "Document", desc: "2:41am — 47th & Lexington. 4 minutes 12 seconds. Number: 555-0142.", icon: "fa-file-lines", correctMatch: 14 },
+                    { id: 12, title: "Lipstick", type: "Physical", desc: "Smashed tube of Revlon 'Cherries in the Snow' found inside the booth.", icon: "fa-gem", correctMatch: 15 },
+                    { id: 13, title: "Handprint", type: "Forensic", desc: "Partial palm print on the glass. Matches a missing person report from 1985.", icon: "fa-hand-paper", correctMatch: 10 },
+                    { id: 14, title: "555-0142", type: "Document", desc: "Belongs to a payphone outside the old Fulton Fish Market.", icon: "fa-phone", correctMatch: 11 },
+                    { id: 15, title: "Matchbook", type: "Physical", desc: "From the Blue Note Lounge. Same brand found at the drummer scene.", icon: "fa-fire", correctMatch: 12 }
+                ],
+                clarityReward: 155
+            },
+            {
+                id: 2,
+                caseNumber: "85-1128",
+                title: "THE MISSING LEDGER",
+                year: "1985",
+                description: "A leather-bound ledger belonging to a known bookmaker disappeared from the evidence room. Renovation may reveal its location.",
+                clues: [
+                    { id: 20, title: "Evidence Log Entry", type: "Document", desc: "Ledger logged March 12, 1985. Last seen in Basement Storage B.", icon: "fa-file-lines", correctMatch: 23 },
+                    { id: 21, title: "Basement Key", type: "Physical", desc: "Found in the evidence room sink drain. Tag reads 'Storage B'.", icon: "fa-key", correctMatch: 24 },
+                    { id: 22, title: "Renovation Receipt", type: "Document", desc: "Work order for new shelving in Storage B dated two days after the ledger vanished.", icon: "fa-file-lines", correctMatch: 25 },
+                    { id: 23, title: "Storage B Photo", type: "Photo", desc: "Old shelving being replaced. A dark leather book is visible behind the old units.", icon: "fa-image", correctMatch: 20 },
+                    { id: 24, title: "Shelving Invoice", type: "Document", desc: "New units installed by 'Midtown Fixtures'. Delivery note mentions 'items found behind old shelves'.", icon: "fa-file-lines", correctMatch: 21 },
+                    { id: 25, title: "Leather Fragment", type: "Physical", desc: "Small piece of dark leather caught in the new shelving. Matches ledger description.", icon: "fa-gem", correctMatch: 22 }
+                ],
+                clarityReward: 140
+            }
+        ]
+        
+        // ==================== STATE ====================
+        let currentCaseIndex = null
+        let matchedPairs = []
+        let clarityPoints = 184
+        let integrity = 42
+        let purchasedUpgrades = [true, false, false]
+        let solvedCases = [] // array of case ids
+        
+        function loadState() {
+            const saved = localStorage.getItem('coldCaseArchive_v03')
+            if (saved) {
+                const data = JSON.parse(saved)
+                clarityPoints = data.clarityPoints || 184
+                integrity = data.integrity || 42
+                purchasedUpgrades = data.purchasedUpgrades || [true, false, false]
+                solvedCases = data.solvedCases || []
+            }
+        }
+        
+        function saveState() {
+            localStorage.setItem('coldCaseArchive_v03', JSON.stringify({
+                clarityPoints,
+                integrity,
+                purchasedUpgrades,
+                solvedCases
+            }))
+        }
+        
+        // ==================== UI UPDATES ====================
+        function updateClarityUI() {
+            document.getElementById('clarity-points').textContent = clarityPoints
+            saveState()
+        }
+        
+        function updateIntegrityUI() {
+            const bar = document.getElementById('integrity-bar')
+            const val = document.getElementById('integrity-value')
+            if (bar && val) {
+                val.textContent = integrity + '%'
+                bar.style.width = integrity + '%'
+            }
+            saveState()
+        }
+        
+        // ==================== DASHBOARD ====================
+        function renderDashboard() {
+            const container = document.getElementById('main-content')
+            container.innerHTML = `
+                <div class="mb-8">
+                    <div class="uppercase tracking-[3px] text-xs text-[#8b7355]">ARCHIVE OVERVIEW</div>
+                    <h1 class="text-5xl font-bold tracking-tighter mt-1">Evidence Archive</h1>
+                    <p class="text-[#8b7355] max-w-md mt-2">Restore the archive. Solve the cases. Uncover what was buried.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    ${cases.map(c => {
+                        const solved = solvedCases.includes(c.id)
+                        return `
+                            <div onclick="startCase(${c.id})" class="case-card cursor-pointer bg-[#2c2522] border border-[#4a4138] hover:border-[#6b5f4f] rounded-2xl p-6 flex flex-col">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-xs text-[#8b7355] tracking-widest">#${c.caseNumber}</div>
+                                        <div class="font-bold text-xl leading-tight mt-1">${c.title}</div>
+                                    </div>
+                                    ${solved ? `<div class="solved-badge text-xs px-3 py-1 rounded-full font-medium">SOLVED</div>` : ''}
+                                </div>
+                                
+                                <div class="flex-1 mt-4 text-sm text-[#8b7355]">
+                                    ${c.description.substring(0, 110)}...
+                                </div>
+                                
+                                <div class="mt-6 pt-4 border-t border-[#4a4138] flex justify-between items-center text-xs">
+                                    <div class="text-[#6b5f4f]">
+                                        ${c.clues.length} clues • ${c.year}
+                                    </div>
+                                    <div class="font-mono text-[#c5b8a3]">
+                                        +${c.clarityReward} <span class="text-[#6b5f4f]">CLARITY</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `
+                    }).join('')}
+                </div>
+                
+                <div class="mt-8 text-xs text-[#4a4138]">
+                    ${solvedCases.length} of 3 cases solved • Renovation progress carries across cases
+                </div>
+            `
+        }
+        
+        // ==================== CASE VIEW ====================
+        function startCase(caseId) {
+            currentCaseIndex = caseId
+            matchedPairs = []
+            
+            const container = document.getElementById('main-content')
+            const caseData = cases[caseId]
+            
+            container.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <button onclick="renderDashboard()" class="flex items-center gap-x-2 text-xs text-[#8b7355] hover:text-[#c5b8a3]">
+                        <i class="fa-solid fa-arrow-left"></i> <span>BACK TO ARCHIVE</span>
+                    </button>
+                    <div class="text-xs px-4 py-1 bg-[#2c2522] border border-[#4a4138] rounded">${caseData.caseNumber} • ${caseData.year}</div>
+                </div>
+                
+                <div class="flex items-end justify-between mb-6">
+                    <div>
+                        <h1 class="case-title font-bold text-5xl tracking-tighter">${caseData.title}</h1>
+                        <p class="text-[#8b7355] mt-1 max-w-lg">${caseData.description}</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="inline-flex items-center gap-x-2 px-4 py-1.5 bg-[#2c2522] border border-[#4a4138] rounded text-sm">
+                            <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                            <span class="text-emerald-300 font-medium">ACTIVE COLD CASE</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-7">
+                        <div class="flex items-center justify-between mb-3 px-1">
+                            <div class="uppercase text-xs tracking-[2px] text-[#8b7355]">EVIDENCE BOARD • DRAG TO MATCH</div>
+                            <div class="text-xs text-[#6b5f4f]">${caseData.clues.length} pieces recovered</div>
+                        </div>
+                        <div id="evidence-board" class="grid grid-cols-2 md:grid-cols-3 gap-4 bg-[#2c2522] p-5 rounded-2xl border border-[#4a4138]"></div>
+                    </div>
+                    
+                    <div class="lg:col-span-5">
+                        <div class="mb-3 px-1 flex items-center justify-between">
+                            <div class="uppercase text-xs tracking-[2px] text-[#8b7355]">MATCHING DESK</div>
+                            <div id="match-status" class="text-xs px-3 py-0.5 bg-[#3a312b] rounded text-[#8b7355]">Drop clues here to link evidence</div>
+                        </div>
+                        
+                        <div id="match-zone" class="match-zone h-[320px] rounded-2xl flex flex-col items-center justify-center p-6 relative film-grain"
+                             ondrop="dropEvidence(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)">
+                            <div class="text-center max-w-[260px]">
+                                <i class="fa-solid fa-link text-5xl text-[#4a4138] mb-4 block"></i>
+                                <div class="text-[#6b5f4f] text-sm">Link related pieces of evidence</div>
+                            </div>
+                            <div id="matched-clues" class="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2 justify-center"></div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-3 text-xs px-1">
+                            <div><span class="text-emerald-300" id="match-count">0</span> <span class="text-[#6b5f4f]">matches made</span></div>
+                            <button onclick="resetMatches()" class="text-[#6b5f4f] hover:text-[#c5b8a3] transition-colors flex items-center gap-x-1.5 text-xs">
+                                <i class="fa-solid fa-undo"></i> <span>RESET</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="lg:col-span-12 mt-4">
+                        <div class="flex items-center justify-between mb-3 px-1">
+                            <div>
+                                <div class="uppercase tracking-[2px] text-xs text-[#8b7355]">ARCHIVE RENOVATION</div>
+                                <div class="text-xl font-semibold">Permanent upgrades across all cases</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="renovation-grid"></div>
+                    </div>
+                </div>
+            `
+            
+            renderEvidenceBoard()
+            renderRenovationGrid()
+            updateMatchCount()
+        }
+        
+        function renderEvidenceBoard() {
+            const board = document.getElementById('evidence-board')
+            if (!board) return
+            board.innerHTML = ''
+            const caseData = cases[currentCaseIndex]
+            
+            caseData.clues.forEach(clue => {
+                const isMatched = matchedPairs.some(m => m.id === clue.id)
+                const card = createEvidenceCard(clue, isMatched)
+                board.appendChild(card)
+            })
+        }
+        
+        function createEvidenceCard(clue, isMatched) {
+            const card = document.createElement('div')
+            card.className = `evidence-card w-full rounded-2xl p-4 cursor-grab active:cursor-grabbing select-none ${isMatched ? 'opacity-40 pointer-events-none' : ''}`
+            card.draggable = !isMatched
+            card.dataset.id = clue.id
+            
+            card.innerHTML = `
+                <div class="flex items-start gap-x-3">
+                    <div class="evidence-photo w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center text-[#2c2522]">
+                        <i class="fa-solid ${clue.icon} text-xl"></i>
+                    </div>
+                    <div class="flex-1 min-w-0 pt-0.5">
+                        <div class="font-semibold text-[#2c2522] text-[15px] leading-none tracking-tight">${clue.title}</div>
+                        <div class="text-[10px] text-[#8b7355] mt-px">${clue.type}</div>
+                        <div class="clue-text text-[#3f3731] mt-2.5 leading-snug">${clue.desc}</div>
+                    </div>
+                </div>
+            `
+            
+            card.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', clue.id)
+                card.classList.add('dragging')
+            })
+            card.addEventListener('dragend', () => card.classList.remove('dragging'))
+            
+            return card
+        }
+        
+        function allowDrop(e) { e.preventDefault(); document.getElementById('match-zone').classList.add('dragover') }
+        function leaveDrop(e) { document.getElementById('match-zone').classList.remove('dragover') }
+        
+        function dropEvidence(e) {
+            e.preventDefault()
+            const zone = document.getElementById('match-zone')
+            zone.classList.remove('dragover')
+            
+            const id = parseInt(e.dataTransfer.getData('text/plain'))
+            const caseData = cases[currentCaseIndex]
+            const item = caseData.clues.find(c => c.id === id)
+            
+            if (!item || matchedPairs.some(m => m.id === id)) return
+            
+            const existingMatch = matchedPairs.find(m => m.correctMatch === item.id || item.correctMatch === m.id)
+            
+            if (existingMatch) {
+                matchedPairs.push(item)
+                matchedPairs.push(existingMatch)
+                
+                playMatchSound()
+                
+                clarityPoints += 35
+                integrity = Math.min(100, integrity + 7)
+                
+                updateClarityUI()
+                updateIntegrityUI()
+                updateMatchCount()
+                
+                const status = document.getElementById('match-status')
+                status.innerHTML = `<span class="text-emerald-300">MATCH CONFIRMED</span>`
+                setTimeout(() => status.innerHTML = 'Drop clues here to link evidence', 1600)
+                
+                renderMatchedClues()
+                renderEvidenceBoard()
+                checkWinCondition()
+            } else {
+                const status = document.getElementById('match-status')
+                status.innerHTML = `<span class="text-red-400">No logical connection</span>`
+                setTimeout(() => status.innerHTML = 'Drop clues here to link evidence', 1300)
+            }
+        }
+        
+        function renderMatchedClues() {
+            const container = document.getElementById('matched-clues')
+            if (!container) return
+            container.innerHTML = ''
+            const unique = [...new Map(matchedPairs.map(item => [item.id, item])).values()]
+            
+            unique.forEach(item => {
+                const pill = document.createElement('div')
+                pill.className = `text-xs px-3 py-1 rounded-full bg-[#3a312b] border border-[#6b5f4f] flex items-center gap-x-1.5 text-[#c5b8a3]`
+                pill.innerHTML = `<i class="fa-solid ${item.icon} text-[10px]"></i><span class="font-medium">${item.title}</span>`
+                container.appendChild(pill)
+            })
+        }
+        
+        function updateMatchCount() {
+            const el = document.getElementById('match-count')
+            if (el) el.textContent = matchedPairs.length / 2
+        }
+        
+        function checkWinCondition() {
+            const caseData = cases[currentCaseIndex]
+            if (matchedPairs.length >= caseData.clues.length) {
+                setTimeout(() => {
+                    if (!solvedCases.includes(caseData.id)) {
+                        solvedCases.push(caseData.id)
+                        clarityPoints += caseData.clarityReward
+                        integrity = 100
+                    }
+                    updateClarityUI()
+                    updateIntegrityUI()
+                    saveState()
+                    
+                    const zone = document.getElementById('match-zone')
+                    zone.innerHTML = `
+                        <div class="text-center">
+                            <div class="text-emerald-300 text-4xl mb-3"><i class="fa-solid fa-trophy"></i></div>
+                            <div class="font-bold text-xl tracking-tight">CASE SOLVED</div>
+                            <div class="text-xs text-[#6b5f4f] mt-1">${caseData.title}</div>
+                            <button onclick="renderDashboard()" class="mt-6 px-6 py-2 text-xs bg-[#3a312b] hover:bg-[#4a4138] rounded transition-colors">RETURN TO ARCHIVE</button>
+                        </div>
+                    `
+                }, 550)
+            }
+        }
+        
+        function resetMatches() {
+            matchedPairs = []
+            const container = document.getElementById('matched-clues')
+            if (container) container.innerHTML = ''
+            const status = document.getElementById('match-status')
+            if (status) status.innerHTML = 'Drop clues here to link evidence'
+            updateMatchCount()
+            renderEvidenceBoard()
+        }
+        
+        // ==================== RENOVATION ====================
+        function renderRenovationGrid() {
+            const container = document.getElementById('renovation-grid')
+            if (!container) return
+            container.innerHTML = ''
+            
+            const upgrades = [
+                { name: "Fluorescent Desk Lamps", cost: 45, desc: "+15% clue recognition speed", purchased: purchasedUpgrades[0] },
+                { name: "Steel Filing Cabinets", cost: 120, desc: "Auto-suggest for future cases", purchased: purchasedUpgrades[1] },
+                { name: "Digital Index System", cost: 210, desc: "Cross-case clue linking", purchased: purchasedUpgrades[2] }
+            ]
+            
+            upgrades.forEach((upgrade, index) => {
+                const div = document.createElement('div')
+                div.className = `renovation-item cursor-pointer bg-[#2c2522] border border-[#4a4138] hover:border-[#6b5f4f] rounded-2xl p-5 ${upgrade.purchased ? 'opacity-75' : ''}`
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-semibold">${upgrade.name}</div>
+                            <div class="text-xs text-[#8b7355] mt-0.5">${upgrade.desc}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-mono text-lg text-[#c5b8a3]">${upgrade.cost}</div>
+                            <div class="text-[10px] text-[#6b5f4f] -mt-1">CLARITY</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-xs ${upgrade.purchased ? 'text-emerald-300' : 'text-[#6b5f4f]'}">
+                        ${upgrade.purchased ? '<i class="fa-solid fa-check mr-1"></i>PURCHASED' : 'Click to purchase'}
+                    </div>
+                `
+                
+                if (!upgrade.purchased) {
+                    div.onclick = () => purchaseUpgrade(index, div)
+                }
+                container.appendChild(div)
+            })
+        }
+        
+        function purchaseUpgrade(index, element) {
+            const costs = [45, 120, 210]
+            if (clarityPoints < costs[index]) {
+                const status = document.getElementById('match-status')
+                if (status) {
+                    status.innerHTML = `<span class="text-amber-300">Not enough Clarity</span>`
+                    setTimeout(() => status.innerHTML = 'Drop clues here to link evidence', 1100)
+                }
+                return
+            }
+            
+            clarityPoints -= costs[index]
+            purchasedUpgrades[index] = true
+            updateClarityUI()
+            
+            if (index === 1) integrity = Math.min(100, integrity + 12)
+            if (index === 2) integrity = Math.min(100, integrity + 15)
+            updateIntegrityUI()
+            
+            renderRenovationGrid()
+            playMatchSound()
+        }
+        
+        // ==================== AUDIO ====================
+        let audioContext
+        function playMatchSound() {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)()
+            const osc = audioContext.createOscillator()
+            const gain = audioContext.createGain()
+            const filter = audioContext.createBiquadFilter()
+            
+            osc.type = 'sawtooth'
+            osc.frequency.value = 180
+            filter.type = 'lowpass'
+            filter.frequency.value = 800
+            gain.gain.value = 0.12
+            
+            const decay = audioContext.createGain()
+            decay.gain.value = 1
+            
+            osc.connect(filter)
+            filter.connect(decay)
+            decay.connect(gain)
+            gain.connect(audioContext.destination)
+            
+            osc.start()
+            setTimeout(() => {
+                decay.gain.linearRampToValueAtTime(0.001, audioContext.currentTime + 0.6)
+                osc.stop(audioContext.currentTime + 0.7)
+            }, 80)
+        }
+        
+        // ==================== BOOT ====================
+        function bootPrototype() {
+            loadState()
+            renderDashboard()
+            updateClarityUI()
+            updateIntegrityUI()
+            
+            // Easter egg
+            const header = document.querySelector('.archive-header')
+            if (header) header.addEventListener('click', () => { clarityPoints += 8; updateClarityUI() })
+            
+            console.log('%c[Cold Case Archive v0.3] Commercial prototype ready. Case select dashboard + 3 cases.', 'color:#4a4138')
+        }
+        
+        window.onload = bootPrototype
+    </script>
+</body>
+</html>

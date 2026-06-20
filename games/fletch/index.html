@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLETCH: Undercover Adventure (1986) - Web Prototype v0.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap');
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        
+        .retro {
+            font-family: 'Press Start 2P', system-ui;
+            image-rendering: pixelated;
+        }
+        
+        .game-canvas {
+            border: 4px solid #333;
+            background: #87CEEB;
+            image-rendering: pixelated;
+        }
+        
+        .fletch-sprite {
+            transition: transform 0.1s;
+        }
+        
+        .location {
+            transition: all 0.2s;
+        }
+        
+        .location:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px #facc15;
+        }
+        
+        .clue {
+            animation: pop 0.3s ease;
+        }
+        
+        .one-liner {
+            font-style: italic;
+            color: #854d0e;
+        }
+        
+        .disguise-btn.active {
+            background-color: #854d0e;
+            color: white;
+            border-color: #713f12;
+        }
+        
+        .pixel-border {
+            border: 3px solid #333;
+            box-shadow: 4px 4px 0 #333;
+        }
+    </style>
+</head>
+<body class="bg-[#f5e8c7] text-[#3f2a1d]">
+    <div class="max-w-5xl mx-auto p-4">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4 bg-[#3f2a1d] text-[#f5e8c7] p-4 rounded pixel-border">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tighter retro">FLETCH</h1>
+                <p class="text-sm opacity-80">1986 Action/Adventure Prototype • "It's all ball bearings nowadays!"</p>
+            </div>
+            <div class="text-right">
+                <div class="text-xs">INSPIRED BY THE 1986 FILM</div>
+                <div class="text-lg font-bold">LOS ANGELES • 1985</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            
+            <!-- Game Area -->
+            <div class="lg:col-span-7 bg-white pixel-border p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="font-bold text-lg">CURRENT LOCATION</h2>
+                    <div id="location-name" class="px-3 py-1 bg-[#facc15] text-[#3f2a1d] font-bold text-sm rounded">VENICE BEACH</div>
+                </div>
+                
+                <!-- Simple Canvas Game Area -->
+                <canvas id="game-canvas" width="560" height="340" class="game-canvas w-full rounded"></canvas>
+                
+                <div class="mt-2 text-xs flex justify-between text-[#854d0e]">
+                    <div>Use <span class="font-bold">ARROW KEYS</span> or <span class="font-bold">WASD</span> to move Fletch</div>
+                    <div>Click hotspots or use buttons below</div>
+                </div>
+            </div>
+
+            <!-- Status / Disguises -->
+            <div class="lg:col-span-5 bg-white pixel-border p-4 flex flex-col">
+                <div class="mb-3">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-bold">DISGUISE</h2>
+                        <div id="disguise-display" class="px-2 py-0.5 bg-[#854d0e] text-white text-xs font-bold rounded">REPORTER (DEFAULT)</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-1 mt-2" id="disguise-buttons">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="flex-1">
+                    <h2 class="font-bold mb-1">CLUES COLLECTED <span id="clue-count" class="text-[#facc15]">0/8</span></h2>
+                    <div id="clues-list" class="text-sm space-y-1 max-h-[120px] overflow-auto bg-[#f5e8c7] p-2 rounded border border-[#d1b48c]">
+                        <div class="text-[#854d0e] italic text-xs">No clues yet. Investigate locations!</div>
+                    </div>
+                </div>
+
+                <div class="mt-3 pt-3 border-t border-[#d1b48c]">
+                    <div class="flex gap-2">
+                        <button onclick="interact()" 
+                                class="flex-1 bg-[#facc15] hover:bg-[#eab308] text-[#3f2a1d] font-bold py-2 px-4 rounded pixel-border active:scale-[0.98]">
+                            INVESTIGATE / INTERACT
+                        </button>
+                        <button onclick="showDialogue()" 
+                                class="bg-white border border-[#854d0e] hover:bg-[#f5e8c7] text-[#3f2a1d] font-bold py-2 px-4 rounded pixel-border active:scale-[0.98]">
+                            TALK
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Locations / Map -->
+            <div class="lg:col-span-12 bg-white pixel-border p-4">
+                <h2 class="font-bold mb-2">TRAVEL / LOCATIONS (Click to move)</h2>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    <div onclick="travelTo('beach')" class="location cursor-pointer bg-[#87CEEB] border-2 border-[#3f2a1d] p-3 rounded text-center hover:bg-[#bae6fd]">
+                        <div class="text-2xl mb-1">🏖️</div>
+                        <div class="font-bold text-sm">VENICE BEACH</div>
+                        <div class="text-[10px] text-[#854d0e]">Drug trafficking story</div>
+                    </div>
+                    <div onclick="travelTo('newsroom')" class="location cursor-pointer bg-[#e0e0e0] border-2 border-[#3f2a1d] p-3 rounded text-center hover:bg-[#d1d5db]">
+                        <div class="text-2xl mb-1">📰</div>
+                        <div class="font-bold text-sm">LA TIMES NEWSROOM</div>
+                        <div class="text-[10px] text-[#854d0e]">Editor Frank Walker</div>
+                    </div>
+                    <div onclick="travelTo('hospital')" class="location cursor-pointer bg-[#f3e8ff] border-2 border-[#3f2a1d] p-3 rounded text-center hover:bg-[#e9d5ff]">
+                        <div class="text-2xl mb-1">🏥</div>
+                        <div class="font-bold text-sm">HOSPITAL</div>
+                        <div class="text-[10px] text-[#854d0e]">Medical records</div>
+                    </div>
+                    <div onclick="travelTo('mansion')" class="location cursor-pointer bg-[#fef3c7] border-2 border-[#3f2a1d] p-3 rounded text-center hover:bg-[#fde68a]">
+                        <div class="text-2xl mb-1">🏠</div>
+                        <div class="font-bold text-sm">STANWYK MANSION</div>
+                        <div class="text-[10px] text-[#854d0e]">The big score</div>
+                    </div>
+                    <div onclick="travelTo('provo')" class="location cursor-pointer bg-[#d1fae5] border-2 border-[#3f2a1d] p-3 rounded text-center hover:bg-[#a7f3d0]">
+                        <div class="text-2xl mb-1">🏔️</div>
+                        <div class="font-bold text-sm">PROVO, UTAH</div>
+                        <div class="text-[10px] text-[#854d0e]">Ranch &amp; parents</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- One-liners &amp; Log -->
+            <div class="lg:col-span-7 bg-white pixel-border p-3 text-sm">
+                <h2 class="font-bold text-xs mb-1 text-[#854d0e]">FLETCH'S WISDOM / LOG</h2>
+                <div id="log" class="h-20 overflow-auto text-xs font-mono bg-[#3f2a1d] text-[#facc15] p-2 rounded">
+                    <div>&gt; Press INVESTIGATE or click locations to start your story...</div>
+                </div>
+            </div>
+
+            <!-- Progress &amp; Actions -->
+            <div class="lg:col-span-5 bg-white pixel-border p-3">
+                <div class="flex items-center justify-between mb-1">
+                    <div>
+                        <span class="font-bold">PROGRESS:</span> 
+                        <span id="progress" class="font-mono">12%</span>
+                    </div>
+                    <button onclick="resetGame()" class="text-xs px-2 py-1 border border-[#854d0e] rounded hover:bg-red-100">RESET</button>
+                </div>
+                
+                <div class="h-2 bg-[#d1b48c] rounded overflow-hidden">
+                    <div id="progress-bar" class="h-2 bg-[#854d0e] transition-all" style="width: 12%"></div>
+                </div>
+                
+                <div class="mt-2 text-xs">
+                    <strong>Goal:</strong> Gather 6+ clues, choose the right disguise at the mansion, and expose the conspiracy!
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center text-xs text-[#854d0e]">
+            Prototype for iteration • Action/Adventure • Mobile-friendly (touch + keyboard) • Web + Godot target<br>
+            <span class="opacity-70">Based on the 1986 Chevy Chase film "Fletch". This is a fan-inspired tribute prototype. Not affiliated with Universal or the estate.</span>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initTailwind() {
+            const style = document.createElement('style');
+            style.textContent = `
+                .pixel-border { border: 3px solid #333; box-shadow: 4px 4px 0 #333; }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Game State
+        let state = {
+            location: 'beach',
+            disguise: 'reporter',
+            clues: [],
+            progress: 12,
+            visited: new Set(['beach']),
+            eventsTriggered: new Set()
+        };
+        
+        const DISGUISES = [
+            { id: 'reporter', name: 'Reporter', desc: 'Trenchcoat + notepad' },
+            { id: 'doctor', name: 'Doctor', desc: 'Lab coat & stethoscope' },
+            { id: 'janedoe', name: '"Jane Doe"', desc: 'Beach bum addict' },
+            { id: 'insurance', name: 'Insurance Guy', desc: 'Suit + clipboard' },
+            { id: 'tennis', name: 'Tennis Pro', desc: 'Shorts & racket' }
+        ];
+        
+        const LOCATIONS = {
+            beach: { name: 'VENICE BEACH', color: '#87CEEB', emoji: '🏖️' },
+            newsroom: { name: 'LA TIMES NEWSROOM', color: '#e0e0e0', emoji: '📰' },
+            hospital: { name: 'HOSPITAL', color: '#f3e8ff', emoji: '🏥' },
+            mansion: { name: 'STANWYK MANSION', color: '#fef3c7', emoji: '🏠' },
+            provo: { name: 'PROVO, UTAH', color: '#d1fae5', emoji: '🏔️' }
+        };
+        
+        const CLUE_DATABASE = {
+            beach: [
+                { id: 'drug-deal', text: 'Fat Sam & Gummy are dealing on the beach for Chief Karlin.', disguiseRequired: null },
+                { id: 'stanwyk-approach', text: 'A rich guy (Stanwyk) offered you $50k to "kill" him.', disguiseRequired: 'janedoe' }
+            ],
+            newsroom: [
+                { id: 'editor-pressure', text: 'Editor Frank Walker wants the drug story finished ASAP.', disguiseRequired: null },
+                { id: 'karlin-warning', text: 'Chief Karlin is threatening to shut down your investigation.', disguiseRequired: null }
+            ],
+            hospital: [
+                { id: 'no-cancer', text: 'Stanwyk\'s medical records show NO cancer. He\'s lying!', disguiseRequired: 'doctor' }
+            ],
+            mansion: [
+                { id: 'briefcase', text: 'Stanwyk exchanged a briefcase with Chief Karlin. Drugs or money?', disguiseRequired: 'reporter' },
+                { id: 'gail-info', text: 'Gail converted $3M stock to cash for a $3,000 "ranch" in Provo.', disguiseRequired: null }
+            ],
+            provo: [
+                { id: 'bigamy', text: 'Stanwyk has another wife (Sally Anne) in Provo for 8 years!', disguiseRequired: 'insurance' },
+                { id: 'ranch-lie', text: 'The "ranch" purchase price was only $3k — huge red flag.', disguiseRequired: null }
+            ]
+        };
+        
+        const ONE_LINERS = [
+            "It's all ball bearings nowadays!",
+            "Can I borrow your towel? My car broke down.",
+            "I\'m not a doctor, but I play one on TV... wait, no I don't.",
+            "You know, I could have been a doctor. Or a lawyer. But this pays better.",
+            "Underhill... Underhill... sounds like a guy who owes me money.",
+            "Rio sounds nice this time of year. Especially with someone else's tickets."
+        ];
+        
+        let canvas, ctx;
+        let player = { x: 280, y: 180, size: 28 };
+        let keys = {};
+        
+        function initCanvas() {
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+            
+            // Keyboard controls
+            window.addEventListener('keydown', (e) => {
+                keys[e.key.toLowerCase()] = true;
+                if (['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(e.key.toLowerCase())) {
+                    e.preventDefault();
+                }
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                keys[e.key.toLowerCase()] = false;
+            });
+            
+            // Touch support for mobile
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            
+            // Click to interact on canvas
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+                
+                // Simple hotspot detection
+                if (state.location === 'beach' && clickX > 100 && clickX < 200 && clickY > 120 && clickY < 220) {
+                    logMessage("You found a suspicious package in the sand...");
+                    collectClue('beach', 'drug-deal');
+                } else if (state.location === 'mansion' && clickX > 350 && clickX < 480 && clickY > 80 && clickY < 200) {
+                    logMessage("The mansion door is locked. Need the right disguise or info.");
+                    if (state.disguise === 'reporter' && state.clues.length >= 4) {
+                        triggerConfrontation();
+                    }
+                } else {
+                    interact();
+                }
+            });
+            
+            // Start game loop
+            setInterval(gameLoop, 1000 / 30);
+            draw();
+        }
+        
+        function handleTouch(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            const touchY = e.touches[0].clientY - rect.top;
+            
+            // Move player toward touch
+            player.x = Math.max(30, Math.min(530, touchX));
+            player.y = Math.max(30, Math.min(310, touchY));
+            
+            // Check hotspots on touch end
+            if (e.type === 'touchend' || e.type === 'touchcancel') {
+                if (state.location === 'beach' && touchX > 100 && touchX < 200 && touchY > 120 && touchY < 220) {
+                    collectClue('beach', 'drug-deal');
+                }
+            }
+        }
+        
+        function gameLoop() {
+            // Movement
+            const speed = 4;
+            if (keys['arrowleft'] || keys['a']) player.x -= speed;
+            if (keys['arrowright'] || keys['d']) player.x += speed;
+            if (keys['arrowup'] || keys['w']) player.y -= speed;
+            if (keys['arrowdown'] || keys['s']) player.y += speed;
+            
+            // Boundaries
+            player.x = Math.max(20, Math.min(540, player.x));
+            player.y = Math.max(20, Math.min(320, player.y));
+            
+            draw();
+        }
+        
+        function draw() {
+            ctx.fillStyle = LOCATIONS[state.location].color || '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Simple location details
+            ctx.fillStyle = '#3f2a1d';
+            ctx.font = '14px monospace';
+            
+            if (state.location === 'beach') {
+                // Sand and ocean
+                ctx.fillStyle = '#f5e8c7';
+                ctx.fillRect(0, 220, 560, 120);
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillRect(0, 0, 560, 80);
+                
+                // Simple palm tree
+                ctx.fillStyle = '#166534';
+                ctx.fillRect(480, 100, 8, 80);
+                ctx.beginPath();
+                ctx.arc(484, 90, 35, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Hotspot indicator
+                ctx.fillStyle = 'rgba(234, 179, 8, 0.6)';
+                ctx.fillRect(110, 130, 80, 80);
+                ctx.fillStyle = '#3f2a1d';
+                ctx.fillText("SUSPICIOUS", 115, 160);
+                ctx.fillText("PACKAGE", 120, 175);
+            } else if (state.location === 'newsroom') {
+                ctx.fillStyle = '#854d0e';
+                ctx.fillRect(50, 50, 460, 20); // desk
+                ctx.fillText("EDITOR'S DESK", 200, 65);
+                ctx.fillStyle = '#3f2a1d';
+                ctx.fillText("Frank Walker is yelling at you again.", 80, 120);
+            } else if (state.location === 'hospital') {
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(200, 50, 160, 100);
+                ctx.fillStyle = '#3f2a1d';
+                ctx.fillText("MEDICAL RECORDS", 220, 90);
+                ctx.fillText("ROOM", 240, 110);
+            } else if (state.location === 'mansion') {
+                ctx.fillStyle = '#854d0e';
+                ctx.fillRect(320, 60, 160, 140); // door
+                ctx.fillStyle = '#facc15';
+                ctx.fillText("STANWYK", 360, 130);
+                ctx.fillText("MANSION", 355, 148);
+            } else if (state.location === 'provo') {
+                ctx.fillStyle = '#166534';
+                ctx.fillRect(0, 200, 560, 140);
+                ctx.fillStyle = '#854d0e';
+                ctx.fillText("UTAH RANCH COUNTRY", 180, 250);
+            }
+            
+            // Draw Fletch sprite (simple pixel guy)
+            ctx.fillStyle = '#3f2a1d';
+            const px = player.x;
+            const py = player.y;
+            
+            // Body
+            ctx.fillRect(px - 8, py - 4, 16, 20);
+            // Head
+            ctx.fillRect(px - 6, py - 14, 12, 12);
+            // Hat or hair depending on disguise
+            if (state.disguise === 'reporter') {
+                ctx.fillStyle = '#facc15';
+                ctx.fillRect(px - 8, py - 16, 16, 4);
+            } else if (state.disguise === 'doctor') {
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(px - 7, py - 16, 14, 3);
+            } else if (state.disguise === 'janedoe') {
+                ctx.fillStyle = '#854d0e';
+                ctx.fillRect(px - 10, py - 18, 20, 6);
+            }
+            
+            // Eyes
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(px - 4, py - 10, 3, 3);
+            ctx.fillRect(px + 1, py - 10, 3, 3);
+            
+            // Label
+            ctx.fillStyle = '#3f2a1d';
+            ctx.font = '10px monospace';
+            ctx.fillText("FLETCH", px - 18, py + 28);
+            
+            // Current disguise indicator near sprite
+            ctx.fillStyle = '#854d0e';
+            ctx.fillText(state.disguise.toUpperCase(), px - 25, py + 38);
+        }
+        
+        function updateUI() {
+            // Location
+            document.getElementById('location-name').textContent = LOCATIONS[state.location].name;
+            document.getElementById('location-name').style.backgroundColor = '#facc15';
+            
+            // Disguise
+            const dispEl = document.getElementById('disguise-display');
+            const current = DISGUISES.find(d => d.id === state.disguise);
+            dispEl.textContent = current ? current.name.toUpperCase() : 'REPORTER';
+            
+            // Clues
+            document.getElementById('clue-count').textContent = `${state.clues.length}/8`;
+            
+            const cluesList = document.getElementById('clues-list');
+            cluesList.innerHTML = '';
+            if (state.clues.length === 0) {
+                cluesList.innerHTML = '<div class="text-[#854d0e] italic text-xs">No clues yet. Investigate locations!</div>';
+            } else {
+                state.clues.forEach(clue => {
+                    const div = document.createElement('div');
+                    div.className = 'clue text-xs bg-white p-1 rounded border-l-2 border-[#854d0e]';
+                    div.textContent = '• ' + clue.text;
+                    cluesList.appendChild(div);
+                });
+            }
+            
+            // Progress
+            document.getElementById('progress').textContent = state.progress + '%';
+            document.getElementById('progress-bar').style.width = state.progress + '%';
+            
+            // Update disguise buttons
+            renderDisguiseButtons();
+        }
+        
+        function renderDisguiseButtons() {
+            const container = document.getElementById('disguise-buttons');
+            container.innerHTML = '';
+            
+            DISGUISES.forEach(d => {
+                const btn = document.createElement('button');
+                btn.className = `disguise-btn text-[10px] px-1 py-1 border border-[#854d0e] rounded text-center leading-tight ${state.disguise === d.id ? 'active' : 'bg-white hover:bg-[#f5e8c7]'}`;
+                btn.innerHTML = `<div class="font-bold">${d.name}</div><div class="text-[8px] opacity-70">${d.desc}</div>`;
+                
+                btn.onclick = () => {
+                    changeDisguise(d.id);
+                };
+                container.appendChild(btn);
+            });
+        }
+        
+        function changeDisguise(newDisguise) {
+            if (state.disguise === newDisguise) return;
+            
+            state.disguise = newDisguise;
+            logMessage(`You quickly change into your ${DISGUISES.find(d => d.id === newDisguise).name} disguise.`);
+            
+            // Special effects
+            if (newDisguise === 'janedoe' && state.location === 'beach') {
+                logMessage("The junkies on the beach nod at you. Access improved.");
+            }
+            if (newDisguise === 'doctor' && state.location === 'hospital') {
+                logMessage("Nurses wave you through. Medical records are yours.");
+            }
+            
+            updateUI();
+            draw();
+        }
+        
+        function travelTo(newLocation) {
+            if (state.location === newLocation) {
+                logMessage("You're already here.");
+                return;
+            }
+            
+            state.location = newLocation;
+            state.visited.add(newLocation);
+            
+            player.x = 280;
+            player.y = 180;
+            
+            logMessage(`You arrive at ${LOCATIONS[newLocation].name}.`);
+            
+            // Auto some events
+            if (newLocation === 'mansion' && !state.eventsTriggered.has('mansion-arrival')) {
+                state.eventsTriggered.add('mansion-arrival');
+                logMessage("Stanwyk is expecting you. The plan is in motion...");
+            }
+            
+            if (newLocation === 'provo' && state.clues.length > 2) {
+                logMessage("The Utah air feels different. Something big is hidden here.");
+            }
+            
+            // Chance for random one-liner
+            if (Math.random() > 0.6) {
+                setTimeout(() => {
+                    logMessage(ONE_LINERS[Math.floor(Math.random() * ONE_LINERS.length)]);
+                }, 800);
+            }
+            
+            updateUI();
+            draw();
+        }
+        
+        function interact() {
+            const loc = state.location;
+            logMessage(`You investigate the area as a ${DISGUISES.find(d=>d.id===state.disguise).name}...`);
+            
+            let foundSomething = false;
+            
+            // Try to collect clues available here
+            if (CLUE_DATABASE[loc]) {
+                CLUE_DATABASE[loc].forEach(clueTemplate => {
+                    if (!state.clues.find(c => c.id === clueTemplate.id)) {
+                        // Check disguise requirement
+                        if (!clueTemplate.disguiseRequired || clueTemplate.disguiseRequired === state.disguise) {
+                            collectClue(loc, clueTemplate.id);
+                            foundSomething = true;
+                        } else {
+                            logMessage(`You need to be disguised as ${clueTemplate.disguiseRequired} to access this clue.`);
+                        }
+                    }
+                });
+            }
+            
+            if (!foundSomething) {
+                // Generic interaction
+                const generics = {
+                    beach: "You question a few beachgoers. One mentions seeing a briefcase exchange last week.",
+                    newsroom: "Your editor is on the phone. He wants results or your job.",
+                    hospital: "You blend in but the records room is locked without proper ID.",
+                    mansion: "The house is quiet. Too quiet. Stanwyk must be upstairs.",
+                    provo: "The realtor's office is closed. You might need to get creative."
+                };
+                logMessage(generics[loc] || "Nothing new here right now.");
+            }
+            
+            // Progress tick
+            if (state.progress < 85) {
+                state.progress += 4;
+            }
+            updateUI();
+        }
+        
+        function collectClue(location, clueId) {
+            const clueTemplate = CLUE_DATABASE[location].find(c => c.id === clueId);
+            if (!clueTemplate) return;
+            
+            if (state.clues.find(c => c.id === clueId)) {
+                logMessage("You already have this information.");
+                return;
+            }
+            
+            state.clues.push({ ...clueTemplate, location });
+            logMessage(`CLUE ACQUIRED: ${clueTemplate.text}`);
+            
+            // Special one-liner on good clues
+            if (clueId === 'no-cancer' || clueId === 'bigamy') {
+                setTimeout(() => logMessage(ONE_LINERS[0]), 400);
+            }
+            
+            // Update progress
+            state.progress = Math.min(95, 15 + (state.clues.length * 10));
+            
+            updateUI();
+            
+            // Check for win condition
+            if (state.clues.length >= 6 && state.location === 'mansion') {
+                setTimeout(triggerConfrontation, 1200);
+            }
+        }
+        
+        function showDialogue() {
+            const loc = state.location;
+            let dialogue = "Fletch strikes up a conversation...";
+            
+            if (loc === 'beach') {
+                dialogue = "Junkie: 'You lookin' for the good stuff, man?' Fletch: 'Only if it comes with a side of truth serum.'";
+            } else if (loc === 'newsroom') {
+                dialogue = "Frank Walker: 'Fletch! Where's my drug story?!' Fletch: 'I'm working on a much bigger story. Trust me on this one.'";
+            } else if (loc === 'mansion' && state.disguise === 'reporter') {
+                dialogue = "Stanwyk: 'You're early. Are you ready to do the job?'";
+                if (state.clues.length >= 4) {
+                    dialogue += " Fletch (revealing himself): 'Actually, I'm here to write the real story.'";
+                }
+            } else if (loc === 'provo') {
+                dialogue = "Velma Stanwyk: 'Our son Alan? He's such a good boy. Why are you asking?'";
+            } else {
+                dialogue = ONE_LINERS[Math.floor(Math.random() * ONE_LINERS.length)];
+            }
+            
+            logMessage(dialogue);
+            
+            // Chance to get a clue from dialogue
+            if (Math.random() > 0.7 && state.clues.length < 5) {
+                setTimeout(() => {
+                    logMessage("The conversation reveals something useful...");
+                    if (loc === 'beach' && !state.clues.find(c => c.id === 'drug-deal')) {
+                        collectClue('beach', 'drug-deal');
+                    }
+                }, 1500);
+            }
+        }
+        
+        function triggerConfrontation() {
+            if (state.eventsTriggered.has('confrontation')) return;
+            state.eventsTriggered.add('confrontation');
+            
+            const hasBigClues = state.clues.some(c => ['no-cancer', 'bigamy', 'briefcase'].includes(c.id));
+            
+            let ending = "";
+            
+            if (state.disguise === 'reporter' && hasBigClues && state.clues.length >= 5) {
+                ending = "SUCCESS! You confront Stanwyk with the evidence. He tries to kill you but Chief Karlin arrives. Gail saves the day with a tennis racket. Karlin is exposed! You publish the story and head to Rio with Gail on Stanwyk's dime.";
+                state.progress = 100;
+                logMessage("🎉 " + ending);
+                setTimeout(() => {
+                    alert("CONGRATULATIONS! You cracked the case like a true Fletch. The conspiracy is exposed. Play again or expand the prototype!");
+                }, 800);
+            } else if (state.disguise === 'janedoe') {
+                ending = "Stanwyk is confused by your beach bum act but doesn't buy it. He pulls a gun. Quick thinking — you talk your way out but miss the big score. Try a different disguise next time.";
+                logMessage(ending);
+            } else {
+                ending = "Stanwyk is suspicious. 'Who are you really?' The confrontation goes sideways. You barely escape. Gather more clues and try the right disguise at the mansion.";
+                logMessage(ending);
+            }
+            
+            updateUI();
+        }
+        
+        function logMessage(msg) {
+            const logEl = document.getElementById('log');
+            const line = document.createElement('div');
+            line.textContent = '> ' + msg;
+            logEl.appendChild(line);
+            logEl.scrollTop = logEl.scrollHeight;
+            
+            // Keep log reasonable size
+            while (logEl.children.length > 6) {
+                logEl.removeChild(logEl.firstChild);
+            }
+        }
+        
+        function resetGame() {
+            state = {
+                location: 'beach',
+                disguise: 'reporter',
+                clues: [],
+                progress: 12,
+                visited: new Set(['beach']),
+                eventsTriggered: new Set()
+            };
+            player.x = 280;
+            player.y = 180;
+            
+            document.getElementById('log').innerHTML = '<div>&gt; Game reset. New investigation beginning...</div>';
+            updateUI();
+            draw();
+        }
+        
+        function initDisguises() {
+            // Initial render
+            renderDisguiseButtons();
+        }
+        
+        function initGame() {
+            initTailwind();
+            initCanvas();
+            initDisguises();
+            updateUI();
+            
+            // Welcome messages
+            setTimeout(() => {
+                logMessage("Los Angeles, 1985. You're Irwin 'Fletch' Fletcher, undercover reporter.");
+            }, 300);
+            setTimeout(() => {
+                logMessage("A wealthy man just offered you $50,000 to kill him. Sounds fishy. Time to investigate.");
+            }, 1200);
+            setTimeout(() => {
+                logMessage("Move with arrows/WASD. Click locations to travel. Change disguises. INVESTIGATE everything.");
+            }, 2200);
+            
+            // Initial clue tease
+            setTimeout(() => {
+                if (state.clues.length === 0) {
+                    logMessage("Tip: Try changing to the 'Jane Doe' disguise at the beach for better intel.");
+                }
+            }, 4500);
+            
+            // Demo: auto give one clue after a while if nothing done
+            setTimeout(() => {
+                if (state.clues.length === 0 && state.location === 'beach') {
+                    logMessage("(Demo) A beach regular slips you some info...");
+                    collectClue('beach', 'drug-deal');
+                }
+            }, 18000);
+            
+            // Keyboard hint
+            document.addEventListener('keydown', (e) => {
+                if (e.key === '?' && document.activeElement.tagName === 'BODY') {
+                    e.preventDefault();
+                    logMessage("Hotkeys: Arrow keys = move | I = interact | T = talk | Numbers 1-5 = change disguise");
+                }
+            });
+            
+            // Number keys for disguises
+            document.addEventListener('keydown', (e) => {
+                const num = parseInt(e.key);
+                if (num >= 1 && num <= 5) {
+                    const d = DISGUISES[num-1];
+                    if (d) changeDisguise(d.id);
+                }
+                if (e.key.toLowerCase() === 'i') interact();
+                if (e.key.toLowerCase() === 't') showDialogue();
+            });
+            
+            console.log('%c[Fletch Prototype] Ready. This is v0.1 for iteration. Expand with Godot next.', 'color:#854d0e');
+        }
+        
+        // Boot
+        window.onload = initGame;
+    </script>
+</body>
+</html>
